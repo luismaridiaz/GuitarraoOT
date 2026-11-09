@@ -837,8 +837,13 @@ const INTERVALS = {   // letras que sube, semitonos, nombre, dificultad inicial 
   '3M': { letters: 2, semis: 4, name: '3ª mayor', d: 1.1 },
   '3m': { letters: 2, semis: 3, name: '3ª menor', d: 1.2 },
   '4J': { letters: 3, semis: 5, name: '4ª justa', d: 1.0 },
-  '5J': { letters: 4, semis: 7, name: '5ª justa', d: 0.9 }
+  '5J': { letters: 4, semis: 7, name: '5ª justa', d: 0.9 },
+  '2M': { letters: 1, semis: 2, name: '2ª mayor', d: 1.0 },
+  '6M': { letters: 5, semis: 9, name: '6ª mayor', d: 1.25 },
+  '7m': { letters: 6, semis: 10, name: '7ª menor', d: 1.3 },
+  '7M': { letters: 6, semis: 11, name: '7ª mayor', d: 1.4 }
 };
+const INTERVAL_SIBLING = { '3M': '3m', '3m': '3M', '7m': '7M', '7M': '7m' };   // mismo número, distinta cualidad: el distractor más instructivo
 const TRIADS = { mayor: [0, 4, 7], menor: [0, 3, 7] };
 const ROOTS = LETTERS;   // 7 fundamentales naturales (intervalos)
 // Fundamentales de tríadas: naturales + alteradas habituales, siempre sin dobles alteraciones (grafía convencional).
@@ -852,10 +857,47 @@ function parseRoot(name) {
 }
 const EXOTIC = /(^|[–\s])(Mi#|Si#|Dob|Fab)/;   // grafías que nadie usa (se evitan también en distractores)
 
+// --- Tríadas disminuida / aumentada ---
+const ALT_TRIADS = { dim: { name: 'disminuida', semis: [0, 3, 6], skill: 'triadas_menores', d: 1.3 }, aug: { name: 'aumentada', semis: [0, 4, 8], skill: 'triadas_mayores', d: 1.3 } };
+const CAND_ROOTS = [...LETTERS, 'Do#', 'Fa#', 'Sol#', 'Sib', 'Mib', 'Lab', 'Reb'];
+function okNames(arr) { return arr.every(x => !EXOTIC.test(x)); }
+function altTriadNotes(rootName, q) { try { const r = parseRoot(rootName); const n = [0, 2, 4].map((o, i) => spell(r.li + o, r.pc + ALT_TRIADS[q].semis[i])); return okNames(n) ? n : null; } catch (e) { return null; } }
+// --- Escalas ---
+const SCALES = {
+  mayor: { name: 'mayor', semis: [0, 2, 4, 5, 7, 9, 11], letters: [0, 1, 2, 3, 4, 5, 6], twin: 'menor', d: 1.2 },
+  menor: { name: 'menor natural', semis: [0, 2, 3, 5, 7, 8, 10], letters: [0, 1, 2, 3, 4, 5, 6], twin: 'mayor', d: 1.3 },
+  penM: { name: 'pentatónica mayor', semis: [0, 2, 4, 7, 9], letters: [0, 1, 2, 4, 5], twin: 'penm', d: 1.3 },
+  penm: { name: 'pentatónica menor', semis: [0, 3, 5, 7, 10], letters: [0, 2, 3, 4, 6], twin: 'penM', d: 1.3 }
+};
+// notas de la escala con una alteración opcional (grado idx, delta ±1); null si exige doble alteración o grafía exótica
+function scaleNotes(rootName, type, alt) {
+  try {
+    const r = parseRoot(rootName), sc = SCALES[type];
+    const n = sc.semis.map((sm, i) => spell(r.li + sc.letters[i], r.pc + sm + (alt && alt.i === i ? alt.delta : 0)));
+    return okNames(n) ? n : null;
+  } catch (e) { return null; }
+}
+// --- Progresiones diatónicas en tonalidad mayor ---
+const MAJ_SEMIS = [0, 2, 4, 5, 7, 9, 11];
+const DEGREES = { I: [0, false], ii: [1, true], iii: [2, true], IV: [3, false], V: [4, false], vi: [5, true] };
+const PROG_TEMPLATES = [['I', 'V', 'vi', 'IV'], ['I', 'IV', 'V', 'I'], ['vi', 'IV', 'I', 'V'], ['I', 'vi', 'IV', 'V'], ['ii', 'V', 'I']];
+const PROG_KEYS = ['Do', 'Sol', 'Re', 'La', 'Mi', 'Fa', 'Sib', 'Mib'];
+function chordName(keyName, deg) {
+  const k = parseRoot(keyName), [d, minor] = DEGREES[deg];
+  return spell(k.li + d, k.pc + MAJ_SEMIS[d]) + (minor ? 'm' : '');
+}
+function progChords(keyName, tpl) { try { const c = PROG_TEMPLATES[tpl].map(d => chordName(keyName, d)); return okNames(c) ? c : null; } catch (e) { return null; } }
+
 function buildCatalog() {
   const cat = { notas: [], intervalos: [], triadas_mayores: [], triadas_menores: [] };
   for (let st = 0; st < 6; st++) for (let f = 0; f <= MAX_FRET; f++) cat.notas.push(`note-s${st}-f${f}`);
-  for (const r of ROOTS) for (const k of Object.keys(INTERVALS)) cat.intervalos.push(`int-${r}-${k}`);
+  for (const r of ROOTS) for (const k of Object.keys(INTERVALS)) {
+    const li = LETTERS.indexOf(r), iv = INTERVALS[k];
+    try { if (okNames([spell(li + iv.letters, LETTER_PC[li] + iv.semis)])) cat.intervalos.push(`int-${r}-${k}`); } catch (e) {}
+  }
+  for (const r of CAND_ROOTS) for (const t of Object.keys(SCALES)) if (scaleNotes(r, t)) cat.intervalos.push(`esc-${r}-${t}`);   // las escalas cuentan en la habilidad 'intervalos'
+  for (const r of CAND_ROOTS) for (const q of Object.keys(ALT_TRIADS)) if (altTriadNotes(r, q)) cat[ALT_TRIADS[q].skill].push(`tri-${r}-${q}`, `trr-${r}-${q}`);
+  for (const k of PROG_KEYS) for (let t = 0; t < PROG_TEMPLATES.length; t++) if (progChords(k, t)) cat.triadas_mayores.push(`prg-${k}-${t}`);
   for (const q of ['mayor', 'menor']) {
     const arr = q === 'mayor' ? cat.triadas_mayores : cat.triadas_menores;
     for (const r of TRI_ROOTS[q]) { arr.push(`tri-${r}-${q}`, `trr-${r}-${q}`, `trb-${r}-${q}-1`, `trb-${r}-${q}-2`); }
@@ -889,9 +931,47 @@ function generateItem(itemId, rnd = Math.random) {
   if (m[0] === 'int') {
     const li = LETTERS.indexOf(m[1]), iv = INTERVALS[m[2]];
     const up = spell(li + iv.letters, LETTER_PC[li] + iv.semis);
-    const names = Object.values(INTERVALS).map(x => x.name);
-    return { q: `¿Qué intervalo hay de ${m[1]} a ${up}?`, options: [iv.name, ...names.filter(n => n !== iv.name)], answer: 0,
+    const others = Object.keys(INTERVALS).filter(k => k !== m[2]);
+    const sib = INTERVAL_SIBLING[m[2]], rest = shuffleArr(others.filter(k => k !== sib), rnd).sort((a, b) => Math.abs(INTERVALS[a].semis - iv.semis) - Math.abs(INTERVALS[b].semis - iv.semis) + (rnd() - 0.5) * 1.5);
+    const picks = [...(sib ? [sib] : []), ...rest].slice(0, 3);
+    return { q: `¿Qué intervalo hay de ${m[1]} a ${up}?`, options: [iv.name, ...picks.map(k => INTERVALS[k].name)], answer: 0,
       skill: 'intervalos', difficulty: iv.d, itemId };
+  }
+  if (m[0] === 'esc') {
+    const type = m[2], sc = SCALES[type], r = parseRoot(m[1]), correct = scaleNotes(m[1], type);
+    const cands = [scaleNotes(m[1], sc.twin)];
+    const idxs = shuffleArr(sc.semis.map((_, i) => i).filter(i => i > 0), rnd);
+    for (const i of idxs) for (const delta of shuffleArr([1, -1], rnd)) cands.push(scaleNotes(m[1], type, { i, delta }));
+    const seen = new Set([correct.join('–')]), out = [];
+    for (const c of cands) { if (!c) continue; const key = c.join('–'); if (!seen.has(key)) { seen.add(key); out.push(key); } if (out.length === 3) break; }
+    const acc = correct.join('').replace(/[^#b]/g, '').length;
+    return { q: `¿Qué notas forman la escala ${sc.name} de ${r.name}?`, options: [correct.join('–'), ...out], answer: 0, skill: 'intervalos',
+      difficulty: Math.round((sc.d + 0.04 * acc) * 100) / 100, itemId };
+  }
+  if (m[0] === 'prg') {
+    const tpl = +m[2], tp = PROG_TEMPLATES[tpl], correct = progChords(m[1], tpl), cands = [];
+    const flip = c => c.endsWith('m') ? c.slice(0, -1) : c + 'm';
+    tp.forEach((_, pos) => {
+      const f = correct.slice(); f[pos] = flip(f[pos]); cands.push(f);
+      for (const d of Object.keys(DEGREES)) { if (d === tp[pos]) continue; try { const r = correct.slice(); r[pos] = chordName(m[1], d); if (r[pos] !== correct[pos]) cands.push(r); } catch (e) {} }
+    });
+    const seen = new Set([correct.join('–')]), out = [];
+    for (const c of shuffleArr(cands, rnd)) { if (!okNames(c) || c.some((x, i) => i && x === c[i - 1])) continue; const k = c.join('–'); if (!seen.has(k)) { seen.add(k); out.push(k); } if (out.length === 3) break; }
+    return { q: `En ${m[1]} mayor, ¿qué acordes forman ${tp.join('–')}?`, options: [correct.join('–'), ...out], answer: 0, skill: 'triadas_mayores',
+      difficulty: Math.round((1.3 + 0.05 * tp.length) * 100) / 100, itemId };
+  }
+  if ((m[0] === 'tri' || m[0] === 'trr') && ALT_TRIADS[m[2]]) {
+    const q = m[2], at = ALT_TRIADS[q], notes = altTriadNotes(m[1], q), root = parseRoot(m[1]), acc = notes.join('').replace(/[^#b]/g, '').length;
+    if (m[0] === 'tri') {
+      const cands = shuffleArr(['mayor', 'menor', q === 'dim' ? 'aug' : 'dim'], rnd).map(x => { try { const sm = x === 'mayor' ? [0, 4, 7] : x === 'menor' ? [0, 3, 7] : ALT_TRIADS[x].semis;
+        const n = [0, 2, 4].map((o, i) => spell(root.li + o, root.pc + sm[i])); return okNames(n) ? n.join('–') : null; } catch (e) { return null; } });
+      const fall = [[[0, 1, 4], [0, 2, 7]], [[0, 3, 4], [0, 5, 7]]].map(([lo, sm]) => { try { const n = lo.map((o, i) => spell(root.li + o, root.pc + sm[i])); return okNames(n) ? n.join('–') : null; } catch (e) { return null; } });   // sus2 / sus4 de reserva
+      const out = []; for (const c of [...cands, ...fall]) if (c && c !== notes.join('–') && !out.includes(c)) out.push(c);
+      return { q: `¿Qué notas forman la tríada ${at.name} de ${root.name}?`, options: [notes.join('–'), ...out.slice(0, 3)], answer: 0, skill: at.skill,
+        difficulty: Math.round((at.d + 0.05 * acc) * 100) / 100, itemId };
+    }
+    const correct = `${root.name} ${at.name}`, others = ['mayor', 'menor', 'disminuida', 'aumentada'].filter(n => n !== at.name).map(n => `${root.name} ${n}`);
+    return { q: `${notes.join('–')} es la tríada de…`, options: [correct, ...others], answer: 0, skill: at.skill, difficulty: Math.round((at.d + 0.1 + 0.05 * acc) * 100) / 100, itemId };
   }
   if (m[0] === 'tri' || m[0] === 'trr' || m[0] === 'trb') {
     const root = parseRoot(m[1]), qual = m[2], other = qual === 'mayor' ? 'menor' : 'mayor';
@@ -1631,6 +1711,42 @@ function runSelfTests() {
       if (it.options[0] !== PC_LABEL[(MIDI[k] + fr) % 12] || !it.q.includes((k + 1) + 'ª cuerda')) errs.push(id + ': nota incorrecta'); }
   }
   if (new Set(Object.values(buildCatalog()).flat()).size !== ALL_ITEM_IDS.size) errs.push('catálogo inconsistente');
+  // Referencia independiente: pitch classes por nombre (sin usar spell/parseRoot/SCALES de la app)
+  const LP = { Do: 0, Re: 2, Mi: 4, Fa: 5, Sol: 7, La: 9, Si: 11 }, LN = ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Si'];
+  const pcOf = n => { const L = n.replace(/[#b]/g, ''); return ((LP[L] + (n.endsWith('#') ? 1 : n.endsWith('b') ? -1 : 0)) % 12 + 12) % 12; };
+  const letOf = n => LN.indexOf(n.replace(/[#b]/g, ''));
+  const SC = { mayor: [[0, 2, 4, 5, 7, 9, 11], [0, 1, 2, 3, 4, 5, 6]], menor: [[0, 2, 3, 5, 7, 8, 10], [0, 1, 2, 3, 4, 5, 6]], penM: [[0, 2, 4, 7, 9], [0, 1, 2, 4, 5]], penm: [[0, 3, 5, 7, 10], [0, 2, 3, 4, 6]] };
+  const IVR = { '2M': [1, 2], '3M': [2, 4], '3m': [2, 3], '4J': [3, 5], '5J': [4, 7], '6M': [5, 9], '7m': [6, 10], '7M': [6, 11] };
+  const MAJ = [0, 2, 4, 5, 7, 9, 11], DEG = { I: [0, 0], ii: [1, 1], iii: [2, 1], IV: [3, 0], V: [4, 0], vi: [5, 1] };
+  const seqOk = (opts, id, rootName) => {
+    if (new Set(opts).size !== opts.length) errs.push(id + ': opciones repetidas');
+    const pcs = opts.map(o => o.split('–').map(pcOf).join(','));
+    if (new Set(pcs).size !== pcs.length) errs.push(id + ': distractor enarmónico de la correcta');
+    if (new Set(opts.map(o => o.split('–').length)).size !== 1) errs.push(id + ': longitudes distintas');
+    if (rootName && !opts.every(o => o.startsWith(rootName + '–'))) errs.push(id + ': inicio distinto');
+  };
+  for (const id of ALL_ITEM_IDS) {
+    const [k, r, t, x] = id.split('-');
+    for (let rep = 0; rep < 12; rep++) {
+      const it = generateItem(id);
+      if (it.options.length !== 4) { errs.push(id + ': ' + it.options.length + ' opciones'); break; }
+      if (k === 'esc') { const [sem, let_] = SC[t], c = it.options[0].split('–');
+        if (c.some((n, i) => pcOf(n) !== (pcOf(r) + sem[i]) % 12 || letOf(n) !== (letOf(r) + let_[i]) % 7)) errs.push(id + ': escala incorrecta ' + c.join('–'));
+        seqOk(it.options, id, r); }
+      if (k === 'int') { const [lt, sm] = IVR[t], up = it.q.match(/ a (\S+)\?/)[1];
+        if (pcOf(up) !== (pcOf(r) + sm) % 12 || letOf(up) !== (letOf(r) + lt) % 7) errs.push(id + ': pregunta incoherente ' + it.q);
+        if (it.options[0] !== { '2M': '2ª mayor', '3M': '3ª mayor', '3m': '3ª menor', '4J': '4ª justa', '5J': '5ª justa', '6M': '6ª mayor', '7m': '7ª menor', '7M': '7ª mayor' }[t]) errs.push(id + ': nombre'); }
+      if (k === 'tri' && (t === 'dim' || t === 'aug')) { const c = it.options[0].split('–'), sm = t === 'dim' ? [0, 3, 6] : [0, 4, 8];
+        if (c.some((n, i) => pcOf(n) !== (pcOf(r) + sm[i]) % 12 || letOf(n) !== (letOf(r) + 2 * i) % 7)) errs.push(id + ': tríada incorrecta'); seqOk(it.options, id, r); }
+      if (k === 'trr' && (t === 'dim' || t === 'aug')) { const n = it.q.split(' ')[0].split('–'), sm = t === 'dim' ? [0, 3, 6] : [0, 4, 8];
+        if (n.some((nn, i) => pcOf(nn) !== (pcOf(r) + sm[i]) % 12) || it.options[0] !== r + ' ' + (t === 'dim' ? 'disminuida' : 'aumentada')) errs.push(id + ': inversa incorrecta'); }
+      if (k === 'prg') { const tp = ['I-V-vi-IV', 'I-IV-V-I', 'vi-IV-I-V', 'I-vi-IV-V', 'ii-V-I'][+t].split('-'), c = it.options[0].split('–');
+        tp.forEach((d, i) => { const m = c[i].endsWith('m'), nm = m ? c[i].slice(0, -1) : c[i], [dg, mn] = DEG[d];
+          if (pcOf(nm) !== (pcOf(r) + MAJ[dg]) % 12 || letOf(nm) !== (letOf(r) + dg) % 7 || m !== !!mn) errs.push(id + ': acorde ' + c[i]); });
+        if (!it.q.includes(tp.join('–')) || new Set(it.options.map(o => o.split('–').length)).size !== 1) errs.push(id + ': pregunta/longitud');
+        if (new Set(it.options).size !== 4) errs.push(id + ': opciones repetidas'); }
+    }
+  }
   const L = 0.5, G = 0.25, S = 0.10;
   if (!(bktPredict(L, G, S, 0.9) > bktPredict(L, G, S, 1) && bktPredict(L, G, S, 1) > bktPredict(L, G, S, 1.2))) errs.push('signo de d');
   if (Math.abs(bktPredict(L, G, S, 1) - (L * (1 - S) + (1 - L) * G)) > 1e-12) errs.push('d=1 ≠ BKT clásico');
