@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guitarra Española · Academia (Fase 2 mejorada)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Roboto, system-ui, sans-serif; background: #1a1e2b; color: #e8edf5; line-height: 1.5; padding: 1rem; }
+  .app-container { max-width: 1600px; margin: 0 auto; }
+  header { background: #0f131f; border-radius: 1.5rem; padding: 1.5rem 2rem; margin-bottom: 2rem; border: 1px solid #2e3a4e; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }
+  h1 { font-size: 1.8rem; background: linear-gradient(135deg, #f5c542, #e07b39); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .stats { display: flex; gap: 1.2rem; background: #1e2433; padding: 0.6rem 1.2rem; border-radius: 3rem; border: 1px solid #3e4a5e; flex-wrap: wrap; }
+  .stat-item { display: flex; flex-direction: column; align-items: center; }
+  .stat-label { font-size: 0.65rem; text-transform: uppercase; color: #8899bb; }
+  .stat-value { font-size: 1.3rem; font-weight: 800; color: #f5c542; }
+  .main-grid { display: grid; grid-template-columns: 1fr 1.1fr 1fr; gap: 1.2rem; }
+  @media (max-width: 1100px) { .main-grid { grid-template-columns: 1fr; } }
+  .card { background: #141a26; border-radius: 1.2rem; padding: 1.2rem; border: 1px solid #2e3a4e; display: flex; flex-direction: column; }
+  .card h2 { font-size: 1rem; margin-bottom: 0.8rem; color: #b7c9e2; border-left: 3px solid #f5c542; padding-left: 0.6rem; }
+  .card h3 { font-size: 0.85rem; margin: 0.8rem 0 0.4rem; color: #a0b3cc; }
+  .level-node { display: flex; align-items: center; gap: 0.8rem; background: #1c2332; border-radius: 0.8rem; padding: 0.6rem 0.8rem; border: 1px solid #2e3a4e; margin-bottom: 0.5rem; cursor: pointer; transition: 0.15s; }
+  .level-node:hover { border-color: #f5c542; }
+  .level-node.locked { opacity: 0.5; cursor: not-allowed; }
+  .level-node.completed { border-left: 3px solid #4caf50; }
+  .level-node.recommended { border-left: 3px solid #f5c542; background: #1e1a10; }
+  .level-icon { width: 32px; height: 32px; border-radius: 50%; background: #2a3446; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; color: #8899bb; }
+  .level-node.completed .level-icon { background: #1e3a1e; color: #6fcf6f; }
+  .level-info { flex: 1; }
+  .level-name { font-weight: 600; font-size: 0.85rem; }
+  .level-desc { font-size: 0.7rem; color: #8899bb; }
+  .stars { font-size: 0.8rem; }
+  .star { color: #3a4458; }
+  .star.filled { color: #f5c542; }
+  .badge { display: inline-block; background: #1e2636; border-radius: 1rem; padding: 0.2rem 0.6rem; font-size: 0.65rem; font-weight: 600; border: 1px solid #3a4a62; color: #a0b3cc; margin: 0.15rem; }
+  .badge.unlocked { border-color: #f5c542; color: #f5c542; background: #2a2510; }
+  .theory-box { background: #0f131f; border-radius: 0.8rem; padding: 1rem; border: 1px solid #2e3a4e; min-height: 120px; }
+  .question-text { font-size: 1.1rem; font-weight: 700; text-align: center; margin-bottom: 0.8rem; color: #f5c542; }
+  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .option-btn { background: #1e2636; border: 1px solid #3a4a62; color: #e8edf5; padding: 0.6rem; border-radius: 0.6rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: 0.15s; }
+  .option-btn:hover { background: #2a3446; border-color: #f5c542; }
+  .option-btn.correct { background: #1e4a2e; border-color: #4caf50; color: #b7f0b7; }
+  .option-btn.wrong { background: #4a1e1e; border-color: #f44336; color: #f0b7b7; }
+  .feedback-msg { text-align: center; margin-top: 0.6rem; font-weight: 600; min-height: 1.2rem; font-size: 0.85rem; }
+  .btn { background: #2a3446; border: 1px solid #3e4a5e; color: #e8edf5; padding: 0.5rem 1rem; border-radius: 1.5rem; font-weight: 600; cursor: pointer; font-size: 0.8rem; transition: 0.15s; }
+  .btn:hover { background: #3a4a62; border-color: #f5c542; }
+  .btn.primary { background: #f5c542; color: #0f131f; border-color: #f5c542; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.75rem; }
+  .fretboard { background: #0a0e14; border-radius: 0.8rem; padding: 0.8rem; border: 1px solid #2e3a4e; overflow-x: auto; }
+  .fretboard-table { width: 100%; border-collapse: collapse; font-size: 0.6rem; }
+  .fretboard-table td { text-align: center; padding: 0.35rem 0.15rem; border: 1px solid #1e2636; cursor: pointer; border-radius: 0.2rem; transition: 0.1s; min-width: 28px; }
+  .fretboard-table td:hover { background: #2a3446; border-color: #f5c542; }
+  .fretboard-table td.open-string { background: #1e2a1e; color: #6fcf6f; font-weight: 600; }
+  .fretboard-table td.note-natural { color: #e8edf5; }
+  .fretboard-table td.note-sharp { color: #8899bb; }
+  .fretboard-table .string-label { background: #1a1e2b; font-weight: 700; color: #f5c542; cursor: default; border-color: #2e3a4e; }
+  .tuner-display { background: #0a0e14; border-radius: 0.8rem; padding: 0.8rem; text-align: center; border: 2px solid #2e3a4e; font-family: 'Courier New', monospace; }
+  .note-big { font-size: 2rem; font-weight: 800; color: #f5c542; }
+  .clarity-bar { height: 6px; background: #1e2636; border-radius: 3px; margin: 0.4rem 0; overflow: hidden; }
+  .clarity-fill { height: 100%; width: 0%; background: #4caf50; transition: width 0.1s, background 0.1s; }
+  .cents-bar { height: 6px; background: #1e2636; border-radius: 3px; margin: 0.3rem 0; overflow: hidden; }
+  .cents-fill { height: 100%; width: 50%; background: #4caf50; transition: width 0.1s, background 0.1s; }
+  .chord-diagram-container { display: flex; justify-content: center; background: #0f131f; border-radius: 0.8rem; padding: 0.5rem; margin: 0.3rem 0; min-height: 140px; }
+  .chord-selector { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.5rem; }
+  .chord-btn { background: #1e2636; border: 1px solid #3a4a62; color: #e8edf5; padding: 0.2rem 0.5rem; border-radius: 1rem; font-size: 0.7rem; cursor: pointer; }
+  .chord-btn.active { background: #f5c542; color: #0f131f; border-color: #f5c542; font-weight: 700; }
+  .metronome-panel { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .beat-indicator { width: 24px; height: 24px; border-radius: 50%; background: #1e2636; border: 1px solid #3a4a62; transition: background 0.1s; cursor: pointer; }
+  .beat-indicator.active { background: #f5c542; }
+  .references { margin-top: 1.5rem; padding: 1rem; background: #0f131f; border-radius: 1rem; border: 1px solid #2e3a4e; font-size: 0.7rem; color: #8899bb; }
+  .references a { color: #f5c542; text-decoration: none; }
+  .references a:hover { text-decoration: underline; }
+  .flex-row { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
+  .mt-1 { margin-top: 0.6rem; }
+  .ear-box, .prod-box { background: #0f131f; border-radius: 0.8rem; padding: 0.8rem; border: 1px solid #2e3a4e; }
+  .bkt-panel { background: #0f131f; border-radius: 0.8rem; padding: 0.8rem; border: 1px solid #2e3a4e; }
+  .pr-sub { font-size: 0.7rem; color: #8899bb; margin-bottom: 0.5rem; }
+  .pr-step { background: #0f131f; border: 1px solid #2e3a4e; border-radius: 0.8rem; padding: 0.7rem; margin-bottom: 0.6rem; }
+  .pr-step.pr-done { border-color: #4caf50; }
+  .pr-title { font-weight: 600; color: #f5c542; margin-bottom: 0.3rem; font-size: 0.85rem; }
+  .pr-text { font-size: 0.72rem; color: #a0b3cc; margin: 0.3rem 0; }
+  .pr-select { background: #0f131f; color: #cfe0ff; border: 1px solid #2e3a4e; border-radius: 0.4rem; font-size: 0.75rem; padding: 0.25rem; margin-bottom: 0.3rem; }
+  .pr-diagram { display: flex; justify-content: center; margin: 0.3rem 0; }
+  .pr-big { font-size: 1.1rem; font-weight: 700; text-align: center; color: #e8edf5; margin: 0.3rem 0; }
+  .pr-beat { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #2e3a4e; vertical-align: middle; transition: background 0.05s; }
+  .pr-beat.on { background: #f5c542; }
+  .pr-stage { font-size: 0.72rem; color: #a0b3cc; margin-bottom: 0.3rem; }
+  .pr-chip { background: #2a2510; color: #f5c542; border-radius: 0.6rem; padding: 0 0.4rem; font-size: 0.6rem; }
+  .skill-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; font-size: 0.75rem; }
+  .skill-name { flex: 0 0 130px; color: #a0b3cc; }
+  .skill-bar-container { flex: 1; height: 10px; background: #1e2636; border-radius: 5px; overflow: hidden; }
+  .skill-bar { height: 100%; background: #4caf50; transition: width 0.4s, background 0.4s; border-radius: 5px; }
+  .skill-pct { flex: 0 0 40px; text-align: right; color: #8899bb; font-family: 'Courier New', monospace; }
+  .recommendation-banner { background: linear-gradient(135deg, #2a2510, #3a2e15); border: 1px solid #f5c542; border-radius: 0.8rem; padding: 0.6rem 0.8rem; margin-bottom: 0.8rem; font-size: 0.8rem; color: #f5c542; }
+  .recommendation-banner strong { color: #fff; }
+</style>
+</head>
+<body>
+<div class="app-container">
+  <header>
+    <div>
+      <h1>🎸 Guitarra Española · Academia</h1>
+      <p style="color:#8899bb; font-size:0.75rem;">Ruta de práctica + teoría adaptativa (BKT, repaso espaciado, calibración)</p>
+    </div>
+    <div class="stats">
+      <div class="stat-item"><span class="stat-label">Racha</span><span class="stat-value" id="streak-value">0</span></div>
+      <div class="stat-item"><span class="stat-label">Púas</span><span class="stat-value" id="picks-value">0</span></div>
+      <div class="stat-item"><span class="stat-label">Timing</span><span class="stat-value" id="timing-accuracy">—</span></div>
+      <div class="stat-item"><span class="stat-label">Oído</span><span class="stat-value" id="ear-accuracy">—</span></div>
+      <div class="stat-item"><span class="stat-label">Producción</span><span class="stat-value" id="prod-accuracy">—</span></div>
+    </div>
+  </header>
+
+  <div class="main-grid">
+    <div class="card" id="practice-card">
+      <h2>🎸 Ruta de práctica de hoy</h2>
+      <div id="practice-summary" class="pr-sub"></div>
+      <div class="pr-step" id="pr-step-warm">
+        <div class="pr-title">1 · Calentamiento (2 min)<span class="pr-ok"></span></div>
+        <div class="pr-text">Dedos 1-2-3-4 en los trastes 1 a 4 de cada cuerda, despacio y con la mano relajada. Si notas dolor, para.</div>
+        <button class="btn btn-sm" id="pr-warm-btn">Hecho</button>
+      </div>
+      <div class="pr-step" id="pr-step-chord">
+        <div class="pr-title">2 · Acorde de hoy<span class="pr-ok"></span></div>
+        <select id="pr-chord-select" class="pr-select"></select>
+        <div id="pr-chord-diagram" class="pr-diagram"></div>
+        <div class="pr-text" id="pr-chord-progress"></div>
+        <button class="btn primary btn-sm" id="pr-listen-btn">🎧 Escuchar 6 s</button>
+        <div id="pr-chord-feedback" class="feedback-msg"></div>
+      </div>
+      <div class="pr-step" id="pr-step-changes">
+        <div class="pr-title">3 · Cambios de acorde (60 s)<span class="pr-ok"></span></div>
+        <select id="pr-pair-select" class="pr-select"></select>
+        <div class="pr-text">Pulso visual (BPM): <input type="number" id="pr-bpm" value="50" min="30" max="120" style="width:52px;background:#1e2636;border:1px solid #3a4a62;color:#e8edf5;border-radius:0.3rem;padding:0.1rem;"> <span id="pr-beat" class="pr-beat"></span></div>
+        <div class="pr-big" id="pr-target">—</div>
+        <div class="pr-text"><span id="pr-timer"></span> <span id="pr-count"></span></div>
+        <button class="btn primary btn-sm" id="pr-round-btn">▶ Empezar 60 s</button>
+        <div id="pr-changes-feedback" class="feedback-msg"></div>
+        <div class="pr-text" style="font-size:0.65rem;">Cambia de acorde cuando la app te lo indique. Meta orientativa: 15-20 cambios al principio. El pulso es solo visual para no interferir con el micrófono.</div>
+      </div>
+      <div class="pr-step" id="pr-step-theory">
+        <div class="pr-title">4 · Teoría<span class="pr-ok"></span></div>
+        <div class="pr-text" id="pr-theory-progress"></div>
+        <button class="btn btn-sm" id="pr-theory-btn">Ir a la teoría</button>
+      </div>
+      <h3>Ruta de acordes</h3>
+      <div id="pr-curriculum"></div>
+    </div>
+
+    <div class="card">
+      <h2>🗺️ Mapa de la Academia</h2>
+      <div id="academy-map"></div>
+      <h3>🏅 Insignias</h3>
+      <div id="badges-container"></div>
+      <h3>📊 Dominio estimado (BKT mejorado)</h3>
+      <div class="bkt-panel">
+        <div class="recommendation-banner" id="recommendation-banner">Calculando recomendación...</div>
+        <div id="bkt-skills"></div>
+        <div class="flex-row mt-1">
+          <button class="btn btn-sm" id="calibrate-btn">🎯 Calibrar con mis datos</button>
+          <button class="btn btn-sm" id="import-attempts-btn">⬆ Importar intentos</button>
+          <input type="file" id="import-file" accept="application/json,.json" style="display:none">
+        </div>
+        <div id="calib-result" style="font-size:0.65rem;color:#99aacc;margin-top:0.4rem;line-height:1.4;"></div>
+        <p style="font-size:0.6rem; color:#667799; margin-top:0.5rem;">BKT con dificultad de ítem, tiempo de respuesta, ZPD y forgetting.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🧠 Teoría (adaptativa + SM-2 + BKT)</h2>
+      <div class="theory-box" id="theory-box">
+        <div class="question-text" id="question-text">Cargando...</div>
+        <div class="options-grid" id="options-grid"></div>
+        <div class="feedback-msg" id="feedback-msg"></div>
+      </div>
+      <div style="font-size:0.65rem;color:#99aacc;margin:0.3rem 0;">Selección de preguntas:
+        <select id="policy-select" style="background:#0f131f;color:#cfe0ff;border:1px solid #2e3a4e;border-radius:0.4rem;font-size:0.65rem;padding:0.15rem;">
+          <option value="auto">Auto (alterna ZPD / más débil por día)</option>
+          <option value="zpd">Solo ZPD</option>
+          <option value="weakest">Solo la más débil</option>
+          <option value="manual" disabled>Nivel elegido en el mapa</option>
+        </select></div>
+      <div id="export-feedback" style="font-size:0.65rem;color:#667799;min-height:0.9rem;"></div>
+      <div class="flex-row mt-1">
+        <button class="btn primary btn-sm" id="next-question-btn" disabled>▶ Siguiente</button>
+        <button class="btn btn-sm" id="reset-progress-btn">🔄 Reiniciar</button>
+        <button class="btn btn-sm" id="export-attempts-btn">⬇ Exportar intentos</button>
+      </div>
+      <h3>🎸 Diapasón interactivo</h3>
+      <div class="fretboard" id="fretboard"></div>
+      <h3>👂 Entrenamiento auditivo</h3>
+      <div class="ear-box">
+        <div id="ear-question" style="text-align:center; font-weight:600; color:#f5c542; margin-bottom:0.5rem;">Pulsa "Reproducir" y elige</div>
+        <div class="options-grid" id="ear-options"></div>
+        <div class="flex-row mt-1">
+          <button class="btn primary btn-sm" id="play-ear-btn">▶ Reproducir</button>
+          <button class="btn btn-sm" id="next-ear-btn" disabled>Siguiente</button>
+        </div>
+        <div id="ear-feedback" class="feedback-msg"></div>
+      </div>
+      <h3>🎸 Producción: toca lo que oyes</h3>
+      <div class="prod-box">
+        <div id="prod-question" style="text-align:center; font-weight:600; color:#f5c542; margin-bottom:0.5rem;">Pulsa "Reproducir objetivo"</div>
+        <div class="flex-row mt-1">
+          <button class="btn primary btn-sm" id="play-prod-btn">▶ Reproducir objetivo</button>
+          <button class="btn btn-sm" id="check-prod-btn" disabled>✅ Comprobar</button>
+        </div>
+        <div id="prod-feedback" class="feedback-msg"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🎼 Diagrama y afinador</h2>
+      <div class="chord-selector" id="chord-selector"></div>
+      <div class="chord-diagram-container" id="chord-diagram"></div>
+      <h3>🎤 Afinador YIN</h3>
+      <div class="tuner-display">
+        <div class="note-big" id="tuner-note">—</div>
+        <div class="clarity-bar"><div class="clarity-fill" id="clarity-fill"></div></div>
+        <div style="font-size:0.6rem; color:#8899bb;" id="clarity-text">claridad: 0%</div>
+        <div class="cents-bar"><div class="cents-fill" id="cents-fill"></div></div>
+        <div style="font-size:0.6rem; color:#8899bb;" id="cents-text">0 cents</div>
+        <div style="font-size:0.6rem; color:#667799;" id="freq-text">0.0 Hz</div>
+      </div>
+      <div class="flex-row mt-1">
+        <button class="btn primary btn-sm" id="start-mic-btn">🎙️ Activar micrófono</button>
+        <button class="btn btn-sm" id="stop-mic-btn" disabled>⏹️ Detener</button>
+      </div>
+      <h3>🎶 Detección de acorde (chroma)</h3>
+      <div class="flex-row">
+        <button class="btn btn-sm" id="detect-chord-btn" disabled>🔍 Detectar acorde</button>
+        <span id="chord-detect-result" style="font-size:0.8rem; color:#8899bb;">—</span>
+      </div>
+      <h3>🥁 Metrónomo (spectral flux onset)</h3>
+      <div class="metronome-panel">
+        <button class="btn btn-sm" id="metronome-toggle">▶ Iniciar</button>
+        <span style="font-size:0.75rem;">BPM: <input type="number" id="bpm-input" value="60" min="40" max="200" style="width:50px; background:#1e2636; border:1px solid #3a4a62; color:#e8edf5; border-radius:0.3rem; padding:0.2rem;"></span>
+        <div class="beat-indicator" id="beat-indicator"></div>
+        <span style="font-size:0.7rem; color:#8899bb;" id="timing-feedback">Pulsa espacio o toca</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="references">
+    <strong>Referencias:</strong>
+    <a href="https://link.springer.com/article/10.1007/BF01099821" target="_blank">Corbett & Anderson (1994) BKT</a> ·
+    <a href="https://github.com/spotify/basic-pitch" target="_blank">Basic Pitch (Spotify)</a> ·
+    <a href="https://github.com/audiojs/pitch" target="_blank">YIN</a> ·
+    Dixon (DAFx 2006) spectral flux
+  </div>
+</div>
+
+<script>
+// ============================================================
+// 1. SKILLS Y BKT MEJORADO
+// ============================================================
+const SKILLS = {
+  'notas':           { name: 'Notas del diapasón', L0: 0.1, T: 0.15, G: 0.25, S: 0.10, lastPractice: null },
+  'intervalos':      { name: 'Intervalos',         L0: 0.1, T: 0.15, G: 0.25, S: 0.10, lastPractice: null },
+  'triadas_mayores': { name: 'Tríadas mayores',    L0: 0.1, T: 0.15, G: 0.25, S: 0.10, lastPractice: null },
+  'triadas_menores': { name: 'Tríadas menores',    L0: 0.1, T: 0.15, G: 0.25, S: 0.10, lastPractice: null },
+  'ear_intervalos':  { name: 'Oído: intervalos',   L0: 0.05, T: 0.15, G: 0.25, S: 0.10, lastPractice: null },
+  'ear_triadas':     { name: 'Oído: tríadas',      L0: 0.05, T: 0.15, G: 0.25, S: 0.10, lastPractice: null },
+  'prod_notas':      { name: 'Producción: notas',  L0: 0.05, T: 0.15, G: 0.10, S: 0.10, lastPractice: null },
+  'timing':          { name: 'Ritmo / timing',     L0: 0.1, T: 0.10, G: 0.30, S: 0.10, lastPractice: null },
+  'acordes_tocados': { name: 'Acordes tocados',    L0: 0.05, T: 0.12, G: 0.10, S: 0.20, lastPractice: null },
+  'cambios_acorde':  { name: 'Cambios de acorde',  L0: 0.05, T: 0.10, G: 0.10, S: 0.25, lastPractice: null }
+};
+
+const LEVEL_TO_SKILL = { 0: 'notas', 1: 'intervalos', 2: 'triadas_mayores', 3: 'triadas_menores' };
+const EAR_TYPE_TO_SKILL = { 'interval': 'ear_intervalos', 'triad': 'ear_triadas' };
+const PROD_TYPE_TO_SKILL = { 'note': 'prod_notas', 'triad': 'triadas_mayores' };
+
+let FORGETTING_RATE = 0.02;
+const SKILL_DEFAULTS = Object.fromEntries(Object.entries(SKILLS).map(([k, v]) => [k, { L0: v.L0, T: v.T, G: v.G, S: v.S }]));
+
+// Núcleo puro del BKT: lo usan la app y la calibración (así no pueden divergir).
+// Dificultad d: d>1 = ítem MÁS DIFÍCIL (escala solo el fallo S; G es el azar y no depende del ítem). d=1 = BKT clásico.
+const D_VERSION = 2;
+function bktPredict(L, G, S, d) {
+  const sl = Math.min(0.9, S * d), g = Math.min(0.9, G);
+  return L * (1 - sl) + (1 - L) * g;
+}
+function bktStep(L, T, G, S, correct, d, rt) {
+  const sl = Math.min(0.9, S * d), g = Math.min(0.9, G);
+  const post = correct ? (L * (1 - sl)) / (L * (1 - sl) + (1 - L) * g)
+                       : (L * sl) / (L * sl + (1 - L) * (1 - g));
+  const newL = Math.min(0.99, Math.max(0.01, post + (1 - post) * T));
+  let w = 1.0;
+  if (rt !== null && rt !== undefined) { if (rt < 1.5) w = 0.5; else if (rt > 15) w = 0.7; }
+  return L + (newL - L) * w;
+}
+
+function applyForgetting() {
+  const now = Date.now();
+  for (const [id, s] of Object.entries(SKILLS)) {
+    if (!s.lastPractice) continue;
+    // Decaimiento incremental: solo días completos desde la última referencia
+    // (evita aplicar el mismo olvido en cada render).
+    const ref = Math.max(s.lastPractice, s.lastDecay || 0);
+    const n = Math.floor((now - ref) / 86400000);
+    if (n >= 1) {
+      s.L0 = Math.max(0.01, s.L0 * Math.pow(1 - FORGETTING_RATE, n));
+      s.lastDecay = ref + n * 86400000;
+    }
+  }
+}
+
+function updateBKTWithDifficulty(skillId, correct, itemDifficulty = 1.0, responseTime = null, itemId = null, pol = null) {
+  const s = SKILLS[skillId];
+  if (!s) return;
+  const pBefore = s.L0;
+  s.L0 = bktStep(s.L0, s.T, s.G, s.S, correct, itemDifficulty, responseTime);
+  s.lastPractice = Date.now();
+  s.lastDecay = s.lastPractice;
+  logAttempt({ t: s.lastPractice, skill: skillId, item: itemId, ok: correct ? 1 : 0,
+    d: itemDifficulty, rt: responseTime === null ? null : Math.round(responseTime * 100) / 100,
+    pre: Math.round(pBefore * 1000) / 1000, post: Math.round(s.L0 * 1000) / 1000, pol: pol });
+}
+
+// ---------- Calibración (Fase 4) ----------
+// Factores multiplicativos sobre los valores por defecto de cada habilidad (5 parámetros: poco sobreajuste).
+// G (adivinar) NO se calibra: es el azar conocido de cada tipo de pregunta.
+const CALIB_DEFAULT = { kT: 1, kS: 1, kL: 1, fr: 0.02 };
+const CALIB_BOUNDS = { kT: [0.2, 3], kS: [0.3, 3], kL: [0.2, 4], fr: [0.0005, 0.15] };
+function applyCalib(c) {
+  FORGETTING_RATE = c.fr;
+  for (const [id, d] of Object.entries(SKILL_DEFAULTS)) {
+    const s = SKILLS[id];
+    s.T = Math.min(0.5, d.T * c.kT); s.G = d.G; s.S = Math.min(0.5, d.S * c.kS);
+  }
+}
+// Reproduce el registro con parámetros c. Devuelve logloss medio en [from,to) y n.
+function replayAttempts(att, c, from, to, out) {
+  const L = {}, ref = {}; let ll = 0, n = 0;
+  for (let i = 0; i < att.length && i < to; i++) {
+    const a = att[i], d0 = SKILL_DEFAULTS[a.skill]; if (!d0) continue;
+    const T = Math.min(0.5, d0.T * c.kT), G = d0.G, S = Math.min(0.5, d0.S * c.kS);
+    let l = a.skill in L ? L[a.skill] : Math.min(0.9, d0.L0 * c.kL);
+    if (a.skill in ref) {
+      const k = Math.floor((a.t - ref[a.skill]) / 86400000);
+      if (k >= 1) l = Math.max(0.01, l * Math.pow(1 - c.fr, k));
+    }
+    if (i >= from) {
+      const p = Math.min(1 - 1e-3, Math.max(1e-3, bktPredict(l, G, S, a.d)));
+      ll -= a.ok ? Math.log(p) : Math.log(1 - p); n++;
+    }
+    L[a.skill] = bktStep(l, T, G, S, !!a.ok, a.d, a.rt);
+    ref[a.skill] = a.t;
+  }
+  if (out) out.L = L;
+  return { loss: n ? ll / n : NaN, n };
+}
+// Aplica parámetros y recalcula el dominio actual reproduciendo todo el historial.
+function applyCalibAndRecompute(c) {
+  applyCalib(c);
+  const o = {};
+  replayAttempts((state.attempts || []).filter(a => a.dVersion === D_VERSION).sort((x, y) => x.t - y.t), c, 0, Infinity, o);
+  for (const [k, v] of Object.entries(o.L || {})) if (SKILLS[k]) SKILLS[k].L0 = v;
+}
+// Ajuste en el 70% inicial (cronológico), validación en el 30% final. Solo propone si mejora con margen.
+function calibrate(att, iters = 300) {
+  const total = att.length;
+  att = att.filter(a => SKILL_DEFAULTS[a.skill] && typeof a.t === 'number' && a.dVersion === D_VERSION).sort((x, y) => x.t - y.t);
+  const N = att.length, old = total - N;
+  const oldMsg = old > 0 ? ' (' + old + ' intentos antiguos con otra escala de dificultad se ignoran)' : '';
+  if (N < 200) return { ok: false, reason: 'Te faltan ' + (200 - N) + ' intentos para poder calibrar (hay ' + N + ' válidos)' + oldMsg + '.' };
+  const cnt = {}; att.forEach(a => cnt[a.skill] = (cnt[a.skill] || 0) + 1);
+  const covered = Object.values(cnt).filter(c => c >= 15).length;
+  if (covered < 4) return { ok: false, reason: 'Hay intentos suficientes, pero solo ' + covered + ' habilidades con ≥15 intentos. Practica al menos 4 distintas para que el ajuste no se extrapole a ciegas.' };
+  const cut = Math.floor(N * 0.7);
+  let best = { ...CALIB_DEFAULT }, bl = replayAttempts(att, best, 0, cut).loss;
+  const keys = Object.keys(CALIB_BOUNDS);
+  let seed = 12345; const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+  for (let i = 0; i < iters; i++) {
+    const c = { ...best }, k = keys[Math.floor(rnd() * keys.length)], [lo, hi] = CALIB_BOUNDS[k];
+    c[k] = Math.min(hi, Math.max(lo, c[k] * Math.exp((rnd() - 0.5) * 0.8)));
+    const l = replayAttempts(att, c, 0, cut).loss;
+    if (l < bl) { best = c; bl = l; }
+  }
+  const before = replayAttempts(att, CALIB_DEFAULT, cut, N).loss;
+  const after = replayAttempts(att, best, cut, N).loss;
+  const gain = before - after;
+  return { ok: true, params: best, N, nTest: N - cut, before, after, gain, useful: gain >= 0.005 };
+}
+
+function initCalibUI() {
+  const out = document.getElementById('calib-result');
+  const fmt = c => `aprendizaje×${c.kT.toFixed(2)} · fallo×${c.kS.toFixed(2)} · inicio×${c.kL.toFixed(2)} · olvido ${(c.fr * 100).toFixed(1)}%/día`;
+  const showCurrent = () => {
+    if (state.calib && state.calib.params) out.innerHTML = '✔ Calibración activa (' + state.calib.n + ' intentos, ' + state.calib.date + '): ' + fmt(state.calib.params) +
+      ' <a href="#" id="calib-undo" style="color:#f5c542">restaurar valores por defecto</a>';
+    else out.textContent = (state.attempts || []).length + ' intentos registrados. Con ≥200 se puede calibrar.';
+    const u = document.getElementById('calib-undo');
+    if (u) u.addEventListener('click', e => { e.preventDefault(); state.calib = null; applyCalibAndRecompute(CALIB_DEFAULT); saveState(); renderBKTPanel(); showCurrent(); });
+  };
+  document.getElementById('calibrate-btn').addEventListener('click', () => {
+    const r = calibrate(state.attempts || []);
+    if (!r.ok) { out.textContent = r.reason; return; }
+    const msg = `Validación sobre los últimos ${r.nTest} intentos: error ${r.before.toFixed(3)} → ${r.after.toFixed(3)}. ${fmt(r.params)}.`;
+    if (!r.useful) { out.textContent = msg + ' Mejora insuficiente (mínimo 0,005): se mantienen los valores por defecto. Solo se guarda una calibración si mejora con datos que no usó para ajustar; así se evita el sobreajuste. Con más intentos y más variedad de habilidades puede mejorar.'; return; }
+    out.innerHTML = msg + ' <a href="#" id="calib-apply" style="color:#f5c542">Aplicar</a>';
+    document.getElementById('calib-apply').addEventListener('click', e => {
+      e.preventDefault();
+      state.calib = { params: r.params, n: r.N, dVersion: D_VERSION, date: new Date().toISOString().slice(0, 10) };
+      applyCalibAndRecompute(r.params); saveState(); renderBKTPanel(); showCurrent();
+    });
+  });
+  const file = document.getElementById('import-file');
+  document.getElementById('import-attempts-btn').addEventListener('click', () => file.click());
+  file.addEventListener('change', () => {
+    const f = file.files[0]; if (!f) return;
+    f.text().then(t => {
+      const j = JSON.parse(t), inc = Array.isArray(j) ? j : j.attempts;
+      if (!Array.isArray(inc)) throw new Error('formato');
+      const seen = new Set((state.attempts || []).map(a => a.t + '|' + a.skill + '|' + (a.item || '') + '|' + a.ok));
+      let added = 0, ignored = 0;
+      for (const a of inc) {
+        if (!a || typeof a.t !== 'number' || !SKILL_DEFAULTS[a.skill]) continue;
+        if (a.dVersion !== D_VERSION) { ignored++; continue; }
+        const key = a.t + '|' + a.skill + '|' + (a.item || '') + '|' + a.ok;
+        if (seen.has(key)) continue;
+        state.attempts.push(a); seen.add(key); added++;
+      }
+      state.attempts.sort((x, y) => x.t - y.t);
+      if (state.attempts.length > MAX_ATTEMPTS) state.attempts.splice(0, state.attempts.length - MAX_ATTEMPTS);
+      saveState(); out.textContent = added + ' intentos importados (' + state.attempts.length + ' en total)' + (ignored ? '; ' + ignored + ' ignorados por tener la escala de dificultad antigua' : '') + '.';
+    }).catch(() => { out.textContent = 'Archivo no válido.'; });
+    file.value = '';
+  });
+  window.calibShow = showCurrent;
+  showCurrent();
+}
+
+// Registro de intentos para calibración (Fase 4)
+const MAX_ATTEMPTS = 5000;
+function logAttempt(a) {
+  if (typeof state === 'undefined') return;
+  if (!Array.isArray(state.attempts)) state.attempts = [];
+  a.dVersion = D_VERSION;
+  state.attempts.push(a);
+  if (state.attempts.length > MAX_ATTEMPTS) state.attempts.splice(0, state.attempts.length - MAX_ATTEMPTS);
+}
+function exportAttempts() {
+  const payload = {
+    app: 'guitarra-academia', version: 'fase4-log-v2', dVersion: D_VERSION, exported: new Date().toISOString(),
+    params: Object.fromEntries(Object.entries(SKILLS).map(([k, v]) => [k, { T: v.T, G: v.G, S: v.S }])),
+    forgettingRate: FORGETTING_RATE,
+    practice: state.practice || null,
+    attempts: state.attempts || []
+  };
+  const txt = JSON.stringify(payload);
+  const fb = document.getElementById('export-feedback');
+  try {
+    const blob = new Blob([txt], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'guitarra-intentos-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    if (fb) fb.textContent = (state.attempts || []).length + ' intentos exportados.';
+  } catch (e) {
+    if (navigator.clipboard) navigator.clipboard.writeText(txt).then(() => { if (fb) fb.textContent = 'Copiado al portapapeles.'; });
+  }
+}
+
+function getRecommendedSkillZPD(onlyTheory = false) {
+  const unlocked = new Set();
+  state.levels.forEach((lvl, idx) => { if (lvl.unlocked) unlocked.add(LEVEL_TO_SKILL[idx]); });
+  if (!onlyTheory) ['ear_intervalos','ear_triadas','prod_notas','timing','acordes_tocados','cambios_acorde'].forEach(s => unlocked.add(s));
+
+  let best = null, bestScore = -Infinity;
+  for (const id of unlocked) {
+    const s = SKILLS[id];
+    if (!s) continue;
+    const zpdScore = 1 - Math.abs(s.L0 - 0.5);
+    const masteryPenalty = s.L0 > 0.85 ? -2 : (s.L0 < 0.1 ? -0.5 : 0);
+    const score = zpdScore + masteryPenalty;
+    if (score > bestScore) {
+      bestScore = score;
+      best = id;
+    }
+  }
+  return best;
+}
+
+// ============================================================
+// 2. ESTADO Y PERSISTENCIA
+// ============================================================
+const STORAGE_KEY = 'guitarra_academia_v6';
+const defaultState = {
+  levels: [
+    { id: 0, name: "Las notas", desc: "Notas del mástil (traste 0–5)", unlocked: true, stars: 0, completedEver: false },
+    { id: 1, name: "Intervalos", desc: "3ª M/m, 4ª y 5ª justas", unlocked: false, stars: 0, completedEver: false },
+    { id: 2, name: "Tríadas mayores", desc: "Notas, nombre e inversiones", unlocked: false, stars: 0, completedEver: false },
+    { id: 3, name: "Tríadas menores", desc: "Notas, nombre e inversiones", unlocked: false, stars: 0, completedEver: false },
+  ],
+  picks: 0, streak: 0,
+  badges: { "first-note": false, "triad-master": false, "ear-training": false, "streak-7": false },
+  questionIntervals: {},
+  timing: { correct: 0, total: 0 },
+  ear: { correct: 0, total: 0 },
+  prod: { correct: 0, total: 0 },
+  skillMastery: {},
+  attempts: [],
+  calib: null,
+  policy: 'auto',
+  practice: { chords: {}, changes: {}, done: {} }
+};
+let state = JSON.parse(JSON.stringify(defaultState));
+
+function loadState() {
+  try {
+    const s = localStorage.getItem(STORAGE_KEY);
+    if (s) {
+      const p = JSON.parse(s);
+      state.picks = p.picks ?? 0;
+      state.streak = p.streak ?? 0;
+      state.badges = { ...state.badges, ...(p.badges || {}) };
+      state.questionIntervals = {};
+      for (const [k, v] of Object.entries(p.questionIntervals || {})) if (ALL_ITEM_IDS.has(k)) state.questionIntervals[k] = v;   // descarta las claves antiguas por posición
+      state.policy = ['auto', 'zpd', 'weakest'].includes(p.policy) ? p.policy : 'auto';
+      state.timing = p.timing || { correct: 0, total: 0 };
+      state.ear = p.ear || { correct: 0, total: 0 };
+      state.prod = p.prod || { correct: 0, total: 0 };
+      state.skillMastery = p.skillMastery || {};
+      state.attempts = Array.isArray(p.attempts) ? p.attempts : [];
+      state.practice = p.practice || { chords: {}, changes: {}, done: {} };
+      state.calib = (p.calib && p.calib.dVersion === D_VERSION) ? p.calib : null;   // calibraciones con la escala antigua se descartan
+      if (state.calib && state.calib.params) applyCalib(state.calib.params);
+      for (const [id, val] of Object.entries(state.skillMastery)) {
+        if (SKILLS[id]) SKILLS[id].L0 = val.L0 ?? val;
+        if (SKILLS[id] && val.lastPractice) { SKILLS[id].lastPractice = val.lastPractice; SKILLS[id].lastDecay = val.lastDecay || val.lastPractice; }
+      }
+      if (p.levels) p.levels.forEach((pl, i) => {
+        if (state.levels[i]) { state.levels[i].unlocked = pl.unlocked; state.levels[i].stars = pl.stars; state.levels[i].completedEver = pl.completedEver ?? (pl.stars > 0); }
+      });
+    }
+  } catch (e) { console.warn(e); }
+}
+function saveState() {
+  try {
+    for (const [id, s] of Object.entries(SKILLS)) {
+      state.skillMastery[id] = { L0: s.L0, lastPractice: s.lastPractice, lastDecay: s.lastDecay || null };
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {}
+}
+
+// ============================================================
+// 3. AUDIO + DIAPASÓN (igual que antes)
+// ============================================================
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+const NOTE_FREQS = {
+  'Do': 261.63, 'Do#': 277.18, 'Re': 293.66, 'Re#': 311.13, 'Mi': 329.63,
+  'Fa': 349.23, 'Fa#': 369.99, 'Sol': 392.00, 'Sol#': 415.30, 'La': 440.00,
+  'La#': 466.16, 'Si': 493.88, 'Mib': 311.13, 'Sib': 466.16
+};
+function playNote(freq, duration = 0.6) {
+  const ctx = getAudioCtx();
+  if (ctx.state === 'suspended') ctx.resume();
+  const osc = ctx.createOscillator(), gain = ctx.createGain();
+  osc.type = 'sine'; osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.3, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(); osc.stop(ctx.currentTime + duration);
+}
+function playTriad(root) {
+  const map = { 'Do':['Do','Mi','Sol'], 'Sol':['Sol','Si','Re'], 'Re':['Re','Fa#','La'], 'La':['La','Do#','Mi'], 'Mi':['Mi','Sol#','Si'], 'Lam':['La','Do','Mi'], 'Rem':['Re','Fa','La'], 'Mim':['Mi','Sol','Si'] };
+  const notes = map[root]; if (!notes) return;
+  notes.forEach((n, i) => setTimeout(() => playNote(NOTE_FREQS[n] || 440, 0.8), i * 300));
+}
+
+const OPEN_STRINGS = [
+  { name: '6ª (Mi)', note: 'Mi', freq: 82.41 },
+  { name: '5ª (La)', note: 'La', freq: 110.00 },
+  { name: '4ª (Re)', note: 'Re', freq: 146.83 },
+  { name: '3ª (Sol)', note: 'Sol', freq: 196.00 },
+  { name: '2ª (Si)', note: 'Si', freq: 246.94 },
+  { name: '1ª (Mi)', note: 'Mi', freq: 329.63 },
+];
+const CHROMATIC = ['Do','Do#','Re','Re#','Mi','Fa','Fa#','Sol','Sol#','La','La#','Si'];
+function getNoteAtFret(openNote, fret) { return CHROMATIC[(CHROMATIC.indexOf(openNote) + fret) % 12]; }
+function renderFretboard() {
+  const container = document.getElementById('fretboard');
+  const maxFret = 5;
+  let html = '<table class="fretboard-table"><thead><tr><th></th>';
+  for (let f = 0; f <= maxFret; f++) html += `<th style="font-size:0.55rem;color:#667799;">${f === 0 ? '0' : f}</th>`;
+  html += '</tr></thead><tbody>';
+  OPEN_STRINGS.forEach((s, si) => {
+    html += `<tr><td class="string-label">${s.name}</td>`;
+    for (let f = 0; f <= maxFret; f++) {
+      const note = getNoteAtFret(s.note, f);
+      const cls = f === 0 ? 'open-string' : (note.includes('#') ? 'note-sharp' : 'note-natural');
+      html += `<td class="${cls}" data-string="${si}" data-fret="${f}" data-note="${note}">${note}</td>`;
+    }
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+  container.querySelectorAll('td[data-note]').forEach(td => {
+    td.addEventListener('click', () => {
+      const note = td.dataset.note, si = parseInt(td.dataset.string), fret = parseInt(td.dataset.fret);
+      const freq = OPEN_STRINGS[si].freq * Math.pow(2, fret / 12);
+      playNote(freq, 0.5);
+      container.querySelectorAll('td').forEach(t => { t.style.background = ''; t.style.border = ''; });
+      td.style.background = '#3a5a3a'; td.style.border = '2px solid #4caf50';
+      window.targetNote = { note, freq };
+      document.getElementById('feedback-msg').textContent = `Objetivo: ${note} (${freq.toFixed(1)} Hz)`;
+      document.getElementById('feedback-msg').style.color = '#f5c542';
+    });
+  });
+}
+
+// ============================================================
+// 4. YIN + AFINADOR + SPECTRAL FLUX
+// ============================================================
+let tunerAudioCtx = null, tunerAnalyser = null, tunerStream = null, tunerActive = false, tunerRAF = null;
+const startMicBtn = document.getElementById('start-mic-btn');
+const stopMicBtn = document.getElementById('stop-mic-btn');
+const tunerNote = document.getElementById('tuner-note');
+const clarityFill = document.getElementById('clarity-fill');
+const clarityText = document.getElementById('clarity-text');
+const centsFill = document.getElementById('cents-fill');
+const centsText = document.getElementById('cents-text');
+const freqText = document.getElementById('freq-text');
+
+async function startTuner() {
+  try {
+    tunerStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    tunerAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    await tunerAudioCtx.resume();
+    const source = tunerAudioCtx.createMediaStreamSource(tunerStream);
+    tunerAnalyser = tunerAudioCtx.createAnalyser();
+    tunerAnalyser.fftSize = 4096;
+    source.connect(tunerAnalyser);
+    tunerActive = true;
+    startMicBtn.disabled = true; stopMicBtn.disabled = false;
+    document.getElementById('detect-chord-btn').disabled = false;
+    document.getElementById('check-prod-btn').disabled = false;
+    tunerNote.textContent = '…';
+    tunerLoop();
+  } catch (e) { alert('Micrófono no disponible. Usa HTTPS o localhost.\n' + e.message); }
+}
+function stopTuner() {
+  tunerActive = false;
+  if (tunerRAF) cancelAnimationFrame(tunerRAF);
+  if (tunerStream) tunerStream.getTracks().forEach(t => t.stop());
+  if (tunerAudioCtx) tunerAudioCtx.close();
+  tunerStream = null; tunerAudioCtx = null; tunerAnalyser = null;
+  startMicBtn.disabled = false; stopMicBtn.disabled = true;
+  document.getElementById('detect-chord-btn').disabled = true;
+  document.getElementById('check-prod-btn').disabled = true;
+  tunerNote.textContent = '—';
+  clarityFill.style.width = '0%'; clarityText.textContent = 'claridad: 0%';
+  centsFill.style.width = '50%'; centsFill.style.background = '#4caf50'; centsText.textContent = '0 cents';
+  freqText.textContent = '0.0 Hz';
+}
+function yinPitch(buffer, sampleRate) {
+  const SIZE = buffer.length, threshold = 0.15;
+  const minFreq = 70, maxFreq = 1200;
+  const minLag = Math.floor(sampleRate / maxFreq), maxLag = Math.floor(sampleRate / minFreq);
+  if (maxLag >= SIZE / 2) return null;
+  const diff = new Float32Array(maxLag);
+  for (let tau = 1; tau < maxLag; tau++) {
+    let sum = 0;
+    for (let i = 0; i < SIZE / 2; i++) { const d = buffer[i] - buffer[i + tau]; sum += d * d; }
+    diff[tau] = sum;
+  }
+  const cmnd = new Float32Array(maxLag); cmnd[0] = 1;
+  let rs = 0;
+  for (let tau = 1; tau < maxLag; tau++) { rs += diff[tau]; cmnd[tau] = rs === 0 ? 1 : diff[tau] * tau / rs; }
+  let tauEst = -1;
+  for (let tau = minLag; tau < maxLag; tau++) {
+    if (cmnd[tau] < threshold) {
+      while (tau + 1 < maxLag && cmnd[tau + 1] < cmnd[tau]) tau++;
+      tauEst = tau; break;
+    }
+  }
+  if (tauEst === -1) return null;
+  const x1 = cmnd[tauEst - 1] || 0, x2 = cmnd[tauEst], x3 = cmnd[tauEst + 1] || 0;
+  const a = (x1 + x3 - 2 * x2) / 2, b = (x3 - x1) / 2;
+  const refinedTau = a !== 0 ? tauEst - b / (2 * a) : tauEst;
+  const freq = sampleRate / refinedTau;
+  const clarity = 1 - x2;
+  return { freq, clarity: Math.max(0, Math.min(1, clarity)) };
+}
+
+let prevMagnitudes = null;
+function detectOnsetSpectralFlux(analyser) {
+  const freqData = new Float32Array(analyser.frequencyBinCount);
+  analyser.getFloatFrequencyData(freqData);
+  const magnitudes = new Float32Array(freqData.length);
+  for (let i = 0; i < freqData.length; i++) {
+    magnitudes[i] = Math.pow(10, freqData[i] / 20);
+  }
+  if (!prevMagnitudes || prevMagnitudes.length !== magnitudes.length) {
+    prevMagnitudes = magnitudes.slice();
+    return false;
+  }
+  let flux = 0;
+  for (let i = 0; i < magnitudes.length; i++) {
+    const diff = magnitudes[i] - prevMagnitudes[i];
+    if (diff > 0) flux += diff;
+  }
+  const threshold = 0.12 * magnitudes.length;
+  prevMagnitudes = magnitudes.slice();
+  return flux > threshold;
+}
+
+function tunerLoop() {
+  if (!tunerActive || !tunerAnalyser) return;
+  const buffer = new Float32Array(tunerAnalyser.fftSize);
+  tunerAnalyser.getFloatTimeDomainData(buffer);
+  const result = yinPitch(buffer, tunerAudioCtx.sampleRate);
+  if (result && result.freq > 70 && result.freq < 1200) {
+    const noteNames = ['Do','Do#','Re','Re#','Mi','Fa','Fa#','Sol','Sol#','La','La#','Si'];
+    const midi = 69 + 12 * Math.log2(result.freq / 440);
+    const noteIdx = Math.round(midi) % 12;
+    const noteName = noteNames[noteIdx];
+    const cents = Math.round((midi - Math.round(midi)) * 100);
+    tunerNote.textContent = noteName;
+    freqText.textContent = result.freq.toFixed(1) + ' Hz';
+    const cl = Math.round(result.clarity * 100);
+    clarityFill.style.width = cl + '%';
+    clarityFill.style.background = cl > 70 ? '#4caf50' : (cl > 40 ? '#ff9800' : '#f44336');
+    clarityText.textContent = `claridad: ${cl}%`;
+    const pct = Math.min(100, Math.max(0, cents + 50));
+    centsFill.style.width = pct + '%';
+    centsFill.style.background = Math.abs(cents) < 10 ? '#4caf50' : (Math.abs(cents) < 25 ? '#ff9800' : '#f44336');
+    centsText.textContent = (cents > 0 ? '+' : '') + cents + ' cents';
+    if (window.targetNote) {
+      const diffCents = Math.round(1200 * Math.log2(result.freq / window.targetNote.freq));
+      if (Math.abs(diffCents) < 30) {
+        document.getElementById('feedback-msg').textContent = `✅ ${noteName} ≈ objetivo (${diffCents > 0 ? '+' : ''}${diffCents} cents)`;
+        document.getElementById('feedback-msg').style.color = '#4caf50';
+      } else if (Math.abs(diffCents) < 100) {
+        document.getElementById('feedback-msg').textContent = `⚠️ Cerca: ${noteName} vs ${window.targetNote.note} (${diffCents > 0 ? '+' : ''}${diffCents} cents)`;
+        document.getElementById('feedback-msg').style.color = '#ff9800';
+      }
+    }
+  } else {
+    tunerNote.textContent = '—'; clarityFill.style.width = '0%'; clarityText.textContent = 'claridad: 0%'; freqText.textContent = '0.0 Hz';
+  }
+  if (metronomeActive && detectOnsetSpectralFlux(tunerAnalyser)) {
+    const now = performance.now();
+    onsetTimes.push(now);
+    if (onsetTimes.length > 50) onsetTimes.shift();
+    compareOnsetToBeat(now);
+  }
+  tunerRAF = requestAnimationFrame(tunerLoop);
+}
+
+// ============================================================
+// 5. CHROMA (mantenida)
+// ============================================================
+const CHORD_TEMPLATES = {
+  'Do':  [1,0,0,0,1,0,0,1,0,0,0,0],
+  'Sol': [0,0,1,0,0,0,0,1,0,0,0,1],
+  'Re':  [0,0,1,0,0,0,1,0,0,1,0,0],
+  'La':  [0,1,0,0,1,0,0,0,0,1,0,0],   // La–Do#–Mi (antes tenía Si en lugar de Do#: era Lasus2)
+  'Mi':  [0,0,0,0,1,0,0,0,1,0,0,1],
+  'Lam': [1,0,0,0,1,0,0,0,0,1,0,0],
+  'Rem': [0,0,1,0,0,1,0,0,0,1,0,0],
+  'Mim': [0,0,0,0,1,0,0,1,0,0,0,1]
+};
+const CHROMA_THRESHOLD = 0.55;
+// Chroma por picos espectrales con interpolación parabólica: la resolución de la FFT no separa los
+// semitonos graves, así que se ignora por debajo de 100 Hz y se usan los armónicos de cada cuerda.
+const CHROMA_FMIN = 100, CHROMA_PEAK_REL = 0.05;
+function computeChroma(analyser) {
+  const n = analyser.frequencyBinCount, db = new Float32Array(n); analyser.getFloatFrequencyData(db);
+  const sr = analyser.context.sampleRate, fft = analyser.fftSize, mag = new Float32Array(n);
+  let mx = 0; for (let i = 0; i < n; i++) { mag[i] = db[i] > -100 ? Math.pow(10, db[i] / 20) : 0; if (mag[i] > mx) mx = mag[i]; }
+  const chroma = new Float32Array(12); if (mx <= 0) return chroma;
+  const thr = mx * CHROMA_PEAK_REL;
+  for (let i = 2; i < n - 1; i++) {
+    const f0 = i * sr / fft; if (f0 < CHROMA_FMIN) continue; if (f0 > 2000) break;
+    if (mag[i] < thr || mag[i] <= mag[i - 1] || mag[i] < mag[i + 1]) continue;
+    const a = db[i - 1], b = db[i], c = db[i + 1], den = a - 2 * b + c, delta = den !== 0 ? 0.5 * (a - c) / den : 0;
+    const midi = 69 + 12 * Math.log2(((i + delta) * sr / fft) / 440), r = Math.round(midi), err = Math.abs(midi - r);
+    chroma[((r % 12) + 12) % 12] += Math.sqrt(mag[i]) * Math.max(0, 1 - err / 0.5);
+  }
+  const sum = chroma.reduce((x, y) => x + y, 0); if (sum > 0) for (let i = 0; i < 12; i++) chroma[i] /= sum;
+  return chroma;
+}
+function cosineSimilarity(a, b) {
+  let dot = 0, na = 0, nb = 0;
+  for (let i = 0; i < 12; i++) { dot += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i]; }
+  return na && nb ? dot / (Math.sqrt(na) * Math.sqrt(nb)) : 0;
+}
+function detectChordChroma(analyser) {
+  const chroma = computeChroma(analyser);
+  let best = null, bestScore = CHROMA_THRESHOLD;
+  for (const [name, template] of Object.entries(CHORD_TEMPLATES)) {
+    const score = cosineSimilarity(chroma, template);
+    if (score > bestScore) { bestScore = score; best = name; }
+  }
+  return best ? { chord: best, confidence: bestScore } : null;
+}
+
+// ============================================================
+// 6. BANCO GENERATIVO DE ÍTEMS + SM-2 POR itemId
+// ============================================================
+// Grafía convencional: se construye por LETRA + alteración (no con la escala cromática en sostenidos).
+const LETTERS = ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Si'];
+const LETTER_PC = [0, 2, 4, 5, 7, 9, 11];
+function spell(li, pc) {
+  li = ((li % 7) + 7) % 7;
+  let diff = (((pc - LETTER_PC[li]) % 12) + 12) % 12; if (diff > 6) diff -= 12;
+  if (Math.abs(diff) > 1) throw new Error('alteración doble no soportada: ' + li + ',' + pc);
+  return LETTERS[li] + (diff === 1 ? '#' : diff === -1 ? 'b' : '');
+}
+const PC_LABEL = ['Do', 'Do# / Reb', 'Re', 'Re# / Mib', 'Mi', 'Fa', 'Fa# / Solb', 'Sol', 'Sol# / Lab', 'La', 'La# / Sib', 'Si'];
+const MAX_FRET = 5;
+const INTERVALS = {   // letras que sube, semitonos, nombre, dificultad inicial (d>1 = más difícil)
+  '3M': { letters: 2, semis: 4, name: '3ª mayor', d: 1.1 },
+  '3m': { letters: 2, semis: 3, name: '3ª menor', d: 1.2 },
+  '4J': { letters: 3, semis: 5, name: '4ª justa', d: 1.0 },
+  '5J': { letters: 4, semis: 7, name: '5ª justa', d: 0.9 }
+};
+const TRIADS = { mayor: [0, 4, 7], menor: [0, 3, 7] };
+const ROOTS = LETTERS;   // 7 fundamentales naturales (intervalos)
+// Fundamentales de tríadas: naturales + alteradas habituales, siempre sin dobles alteraciones (grafía convencional).
+const TRI_ROOTS = { mayor: [...LETTERS, 'Sib', 'Mib', 'Lab', 'Reb', 'Fa#'], menor: [...LETTERS, 'Do#', 'Fa#', 'Sol#', 'Sib', 'Mib'] };
+// 'Sib' → {li:6, pc:10}; 'Fa#' → {li:3, pc:6}
+function parseRoot(name) {
+  const li = LETTERS.findIndex(L => name === L || (name.startsWith(L) && name.length === L.length + 1 && 'b#'.includes(name.slice(-1))));
+  if (li < 0) throw new Error('fundamental desconocida: ' + name);
+  const acc = name.endsWith('#') ? 1 : name.endsWith('b') ? -1 : 0;
+  return { li, pc: ((LETTER_PC[li] + acc) % 12 + 12) % 12, name };
+}
+const EXOTIC = /(^|[–\s])(Mi#|Si#|Dob|Fab)/;   // grafías que nadie usa (se evitan también en distractores)
+
+function buildCatalog() {
+  const cat = { notas: [], intervalos: [], triadas_mayores: [], triadas_menores: [] };
+  for (let st = 0; st < 6; st++) for (let f = 0; f <= MAX_FRET; f++) cat.notas.push(`note-s${st}-f${f}`);
+  for (const r of ROOTS) for (const k of Object.keys(INTERVALS)) cat.intervalos.push(`int-${r}-${k}`);
+  for (const q of ['mayor', 'menor']) {
+    const arr = q === 'mayor' ? cat.triadas_mayores : cat.triadas_menores;
+    for (const r of TRI_ROOTS[q]) { arr.push(`tri-${r}-${q}`, `trr-${r}-${q}`, `trb-${r}-${q}-1`, `trb-${r}-${q}-2`); }
+  }
+  return cat;
+}
+const ITEM_CATALOG = buildCatalog();
+const ALL_ITEM_IDS = new Set(Object.values(ITEM_CATALOG).flat());
+
+function shuffleArr(a, rnd = Math.random) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function noteDistractors(pc, rnd) {
+  const used = new Set([pc]), out = [];
+  const take = (cands) => { for (const c of shuffleArr(cands, rnd)) { const v = ((c % 12) + 12) % 12; if (!used.has(v)) { used.add(v); out.push(v); return true; } } return false; };
+  take([pc + 1, pc - 1, pc + 2, pc - 2]);          // vecino
+  take([pc + 3, pc - 3, pc + 4, pc - 4]);          // cercano
+  take([...Array(12).keys()].filter(v => !used.has(v)));   // al azar del resto
+  while (out.length < 3) take([...Array(12).keys()].filter(v => !used.has(v)));
+  return out;
+}
+// Devuelve {q, options (la correcta SIEMPRE primera, sin barajar), answer:0, skill, difficulty, itemId}
+function generateItem(itemId, rnd = Math.random) {
+  const m = itemId.split('-');
+  if (m[0] === 'note') {
+    const st = +m[1].slice(1), f = +m[2].slice(1);
+    const pc = (CHROMATIC.indexOf(OPEN_STRINGS[5 - st].note) + f) % 12;
+    const opts = [PC_LABEL[pc], ...noteDistractors(pc, rnd).map(v => PC_LABEL[v])];
+    const acc = PC_LABEL[pc].includes('/') ? 0.1 : 0;
+    return { q: f === 0 ? `¿Qué nota suena en la ${st + 1}ª cuerda al aire?` : `¿Qué nota hay en la ${st + 1}ª cuerda, traste ${f}?`,
+      options: opts, answer: 0, skill: 'notas', difficulty: Math.round((0.7 + 0.1 * f + acc) * 100) / 100, itemId };
+  }
+  if (m[0] === 'int') {
+    const li = LETTERS.indexOf(m[1]), iv = INTERVALS[m[2]];
+    const up = spell(li + iv.letters, LETTER_PC[li] + iv.semis);
+    const names = Object.values(INTERVALS).map(x => x.name);
+    return { q: `¿Qué intervalo hay de ${m[1]} a ${up}?`, options: [iv.name, ...names.filter(n => n !== iv.name)], answer: 0,
+      skill: 'intervalos', difficulty: iv.d, itemId };
+  }
+  if (m[0] === 'tri' || m[0] === 'trr' || m[0] === 'trb') {
+    const root = parseRoot(m[1]), qual = m[2], other = qual === 'mayor' ? 'menor' : 'mayor';
+    const triad = (lo, semis) => lo.map((o, i) => spell(root.li + o, root.pc + semis[i]));
+    const safe = (fn) => { try { const r = fn(); return (Array.isArray(r) ? r.some(x => EXOTIC.test(x)) : EXOTIC.test(r)) ? null : r; } catch (e) { return null; } };
+    const pick3 = (cands, correct) => { const out = []; for (const c of cands) if (c && c !== correct && !out.includes(c)) out.push(c); return out.slice(0, 3); };
+    const notes = triad([0, 2, 4], TRIADS[qual]);                   // notas de la tríada, con grafía correcta
+    const acc = notes.join('').replace(/[^#b]/g, '').length;
+    const skill = qual === 'mayor' ? 'triadas_mayores' : 'triadas_menores';
+    if (m[0] === 'tri') {
+      const correct = notes.join('–');
+      const cands = [safe(() => triad([0, 2, 4], TRIADS[other]).join('–')), safe(() => triad([0, 3, 4], [0, 5, 7]).join('–')),
+        safe(() => triad([0, 2, 4], qual === 'mayor' ? [0, 4, 8] : [0, 3, 6]).join('–')), safe(() => triad([0, 1, 2], [0, 2, 4]).join('–')),
+        safe(() => triad([0, 1, 4], [0, 2, 7]).join('–'))];   // sus2 como reserva cuando la grafía de otros distractores sería exótica
+      return { q: `¿Qué notas forman la tríada ${qual} de ${root.name}?`, options: [correct, ...pick3(cands, correct)], answer: 0,
+        skill, difficulty: Math.round((1 + 0.05 * acc) * 100) / 100, itemId };
+    }
+    if (m[0] === 'trr') {       // inversa: notas → nombre del acorde
+      const correct = `${root.name} ${qual}`;
+      const rel = qual === 'mayor' ? safe(() => spell(root.li - 2, root.pc - 3) + ' menor') : safe(() => spell(root.li + 2, root.pc + 3) + ' mayor');
+      const cands = [`${root.name} ${other}`, rel, safe(() => spell(root.li + 4, root.pc + 7) + ' ' + qual), safe(() => spell(root.li + 3, root.pc + 5) + ' ' + qual)];
+      return { q: `${notes.join('–')} es la tríada de…`, options: [correct, ...pick3(cands, correct)], answer: 0,
+        skill, difficulty: Math.round((1.1 + 0.05 * acc) * 100) / 100, itemId };
+    }
+    const inv = +m[3], bass = notes[inv];   // trb: nota del bajo en la 1ª / 2ª inversión
+    const foreign = safe(() => spell(root.li + 1, root.pc + 2)) || safe(() => spell(root.li + 3, root.pc + 5));
+    const cands = [...notes.filter(n => n !== bass), foreign];
+    return { q: `¿Qué nota va en el bajo en la ${inv}ª inversión de ${root.name} ${qual}?`, options: [bass, ...pick3(cands, bass)], answer: 0,
+      skill, difficulty: Math.round(((inv === 1 ? 1.15 : 1.25) + 0.05 * acc) * 100) / 100, itemId };
+  }
+  throw new Error('itemId desconocido: ' + itemId);
+}
+
+// --- SM-2 por itemId ---
+let manualLevel = null, currentItem = null, lastItemId = null, questionStartTime = 0;
+function isItemDue(id) { const rec = state.questionIntervals[id]; return !rec || Date.now() >= rec.nextReview; }
+function updateSpacedRepetition(id, correct) {
+  let rec = state.questionIntervals[id] || { ease: 2.5, interval: 0, nextReview: 0 };
+  if (correct) {
+    rec.ease = Math.max(1.3, rec.ease + 0.1);
+    if (rec.interval === 0) rec.interval = 1;
+    else if (rec.interval === 1) rec.interval = 2;
+    else rec.interval = Math.round(rec.interval * rec.ease);
+    rec.nextReview = Date.now() + rec.interval * 86400000;
+  } else {
+    rec.ease = Math.max(1.3, rec.ease - 0.2);
+    rec.interval = 1;
+    rec.nextReview = Date.now() + 86400000;
+  }
+  state.questionIntervals[id] = rec;
+}
+
+// --- Evidencia por habilidad (derivada del registro; nada que persistir aparte) ---
+function skillEvidence(id) {
+  const items = new Set(); let n = 0;
+  for (const a of (state.attempts || [])) if (a.skill === id) { n++; if (a.item) items.add(a.item); }
+  return { n, distinct: items.size };
+}
+function evidenceLabel(n) { return n < 10 ? 'pocos datos' : (n <= 30 ? 'datos medios' : 'datos suficientes'); }
+
+// --- Nivel completado: dominio + evidencia + variedad; la marca es permanente ---
+const LEVEL_COMPLETE_MASTERY = 0.85, LEVEL_MIN_ATTEMPTS = 8, LEVEL_MIN_DISTINCT = 6;
+function levelReady(idx) {
+  const sk = LEVEL_TO_SKILL[idx]; if (!SKILLS[sk]) return false;
+  if (SKILLS[sk].L0 < LEVEL_COMPLETE_MASTERY) return false;
+  const ev = skillEvidence(sk);
+  return ev.n >= LEVEL_MIN_ATTEMPTS && ev.distinct >= LEVEL_MIN_DISTINCT;
+}
+function checkLevelCompletion() {      // con efectos: llamar tras responder, no al renderizar
+  let changed = false;
+  state.levels.forEach((lvl, idx) => {
+    if (!lvl.unlocked || lvl.completedEver || !levelReady(idx)) return;
+    lvl.completedEver = true; lvl.stars = 3; changed = true;
+    if (idx + 1 < state.levels.length) state.levels[idx + 1].unlocked = true;
+    if (idx === 0) state.badges["first-note"] = true;
+    if (idx === 2) state.badges["triad-master"] = true;
+  });
+  if (changed) { saveState(); renderMap(); renderBadges(); }
+  return changed;
+}
+
+// --- Política de selección (conmutable y registrada en cada intento) ---
+function theorySkills() { return state.levels.map((l, i) => l.unlocked ? LEVEL_TO_SKILL[i] : null).filter(Boolean); }
+function effectivePolicy() {
+  if (manualLevel !== null) return 'manual';
+  const p = state.policy || 'auto';
+  if (p === 'auto') return (Math.floor(Date.now() / 86400000) % 2) ? 'weakest' : 'zpd';
+  return p;
+}
+function pickSkill(pol) {
+  const sk = theorySkills();
+  if (pol === 'manual') return LEVEL_TO_SKILL[manualLevel];
+  if (pol === 'weakest') return sk.reduce((b, k) => SKILLS[k].L0 < SKILLS[b].L0 ? k : b, sk[0]);
+  return getRecommendedSkillZPD(true) || sk[0];
+}
+function dueOrNewItem(skill) {
+  const ids = ITEM_CATALOG[skill] || [];
+  const due = ids.filter(id => state.questionIntervals[id] && Date.now() >= state.questionIntervals[id].nextReview && id !== lastItemId)
+                 .sort((a, b) => state.questionIntervals[a].nextReview - state.questionIntervals[b].nextReview);
+  if (due.length) return due[0];
+  const fresh = ids.filter(id => !state.questionIntervals[id] && id !== lastItemId);
+  if (fresh.length) return fresh[Math.floor(Math.random() * fresh.length)];
+  return null;
+}
+function selectNextItem() {
+  const pol = effectivePolicy(), skill = pickSkill(pol);
+  const order = [skill];
+  if (pol !== 'manual') order.push(...shuffleArr(theorySkills().filter(k => k !== skill)));
+  for (const k of order) { const id = dueOrNewItem(k); if (id) return { itemId: id, skill: k, sm2: true, pol }; }
+  const ids = (ITEM_CATALOG[skill] || []).filter(id => id !== lastItemId);    // práctica libre: no toca el SM-2
+  return { itemId: ids[Math.floor(Math.random() * ids.length)], skill, sm2: false, pol };
+}
+
+// ============================================================
+// 7. TEORÍA ADAPTATIVA
+// ============================================================
+function renderTheory() {
+  const qBox = document.getElementById('question-text');
+  const grid = document.getElementById('options-grid');
+  const fb = document.getElementById('feedback-msg');
+  const nextBtn = document.getElementById('next-question-btn');
+  const pick = selectNextItem();
+  const q = generateItem(pick.itemId);
+  currentItem = pick; lastItemId = pick.itemId;
+  qBox.textContent = q.q;
+  fb.textContent = pick.sm2 ? '' : 'Práctica libre (sin repasos pendientes)';
+  fb.style.color = '#8899bb';
+  nextBtn.disabled = true;
+  grid.innerHTML = '';
+  questionStartTime = performance.now();
+  // Barajar opciones (si no, la correcta sería siempre la 1ª y el BKT se falsearía)
+  const order = shuffleArr(q.options.map((_, i) => i));
+  let correctBtn = null;
+  order.forEach((origIdx) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn'; btn.textContent = q.options[origIdx];
+    if (origIdx === q.answer) correctBtn = btn;
+    grid.appendChild(btn);
+    btn.addEventListener('click', () => {
+      const correct = origIdx === q.answer;
+      const responseTime = (performance.now() - questionStartTime) / 1000;
+      grid.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+      if (correct) {
+        btn.classList.add('correct'); fb.textContent = '✅ Correcto +1 púa'; fb.style.color = '#4caf50';
+        state.picks++; document.getElementById('picks-value').textContent = state.picks;
+      } else {
+        btn.classList.add('wrong'); correctBtn.classList.add('correct');
+        fb.textContent = '❌ Incorrecto. Repaso programado.'; fb.style.color = '#f44336';
+      }
+      updateBKTWithDifficulty(q.skill, correct, q.difficulty, responseTime, q.itemId, pick.pol);
+      if (pick.sm2) updateSpacedRepetition(q.itemId, correct);
+      saveState();
+      renderBKTPanel();
+      checkLevelCompletion();
+      renderPractice(true);
+      nextBtn.disabled = false;
+    });
+  });
+}
+
+// ============================================================
+// 8. MAPA + INSIGNIAS + PANEL BKT
+// ============================================================
+function renderMap() {
+  const container = document.getElementById('academy-map');
+  container.innerHTML = '';
+  const recommendedSkill = getRecommendedSkillZPD();
+  state.levels.forEach((level, idx) => {
+    const levelSkill = LEVEL_TO_SKILL[idx];
+    const isRecommended = level.unlocked && levelSkill === recommendedSkill;
+    const div = document.createElement('div');
+    div.className = 'level-node' + (level.unlocked ? '' : ' locked') + (level.completedEver ? ' completed' : '') + (isRecommended ? ' recommended' : '');
+    const starsHTML = [1,2,3].map(s => `<span class="star ${s <= level.stars ? 'filled' : ''}">★</span>`).join('');
+    div.innerHTML = `
+      <div class="level-icon">${level.unlocked ? idx : '🔒'}</div>
+      <div class="level-info"><div class="level-name">${level.name}${isRecommended ? ' ⭐' : ''}</div><div class="level-desc">${level.desc}</div></div>
+      <div class="stars">${starsHTML}</div>
+    `;
+    if (level.unlocked) div.addEventListener('click', () => { manualLevel = idx; const ps = document.getElementById('policy-select'); if (ps) ps.value = 'manual'; renderTheory(); });
+    container.appendChild(div);
+  });
+}
+function renderBadges() {
+  const container = document.getElementById('badges-container');
+  const labels = { "first-note": "Primera nota", "triad-master": "Maestro tríadas", "ear-training": "Oído", "streak-7": "Racha 7" };
+  container.innerHTML = '';
+  for (const [key, unlocked] of Object.entries(state.badges)) {
+    const span = document.createElement('span');
+    span.className = 'badge' + (unlocked ? ' unlocked' : '');
+    span.textContent = labels[key] || key;
+    container.appendChild(span);
+  }
+}
+function renderBKTPanel() {
+  applyForgetting();
+  const container = document.getElementById('bkt-skills');
+  if (!container) return;
+  container.innerHTML = '';
+  const sorted = Object.entries(SKILLS).sort((a, b) => a[1].L0 - b[1].L0);
+  for (const [id, skill] of sorted) {
+    const pct = Math.round(skill.L0 * 100);
+    const color = pct < 30 ? '#f44336' : (pct < 60 ? '#ff9800' : (pct < 85 ? '#f5c542' : '#4caf50'));
+    const row = document.createElement('div');
+    row.className = 'skill-row';
+    row.innerHTML = `
+      <span class="skill-name">${skill.name}<br><small style="color:#667799;font-size:0.55rem">${evidenceLabel(skillEvidence(id).n)}</small></span>
+      <div class="skill-bar-container"><div class="skill-bar" style="width:${pct}%; background:${color};"></div></div>
+      <span class="skill-pct">${pct}%</span>
+    `;
+    container.appendChild(row);
+  }
+  const rec = getRecommendedSkillZPD();
+  const banner = document.getElementById('recommendation-banner');
+  if (rec) {
+    banner.innerHTML = `⭐ <strong>Siguiente recomendado (ZPD):</strong> ${SKILLS[rec].name} (dominio ${Math.round(SKILLS[rec].L0*100)}%)`;
+  } else {
+    banner.innerHTML = `🎉 <strong>¡Todos los skills dominados!</strong> Sigue repasando para mantener.`;
+  }
+}
+
+// ============================================================
+// 9. METRÓNOMO + TIMING
+// ============================================================
+let metronomeInterval = null;
+let metronomeActive = false;
+let beatTimes = [];
+let userTapTimes = [];
+let onsetTimes = [];
+
+function startMetronome() {
+  const bpm = parseInt(document.getElementById('bpm-input').value) || 60;
+  const period = 60000 / bpm;
+  metronomeActive = true;
+  document.getElementById('metronome-toggle').textContent = '⏹ Detener';
+  const indicator = document.getElementById('beat-indicator');
+  beatTimes = []; userTapTimes = []; onsetTimes = [];
+  metronomeInterval = setInterval(() => {
+    const now = performance.now();
+    beatTimes.push(now);
+    if (beatTimes.length > 50) beatTimes.shift();
+    indicator.classList.toggle('active');
+    playNote(880, 0.04);
+  }, period);
+  document.addEventListener('keydown', onUserTap);
+  indicator.addEventListener('click', onUserTap);
+}
+function onUserTap(e) {
+  if (!metronomeActive) return;
+  if (e && e.code && e.code !== 'Space') return;
+  const now = performance.now();
+  userTapTimes.push(now);
+  if (userTapTimes.length > 50) userTapTimes.shift();
+  if (beatTimes.length === 0) return;
+  let minDiff = Infinity;
+  for (const bt of beatTimes.slice(-8)) { const d = Math.abs(now - bt); if (d < minDiff) minDiff = d; }
+  const correct = minDiff < 100;
+  document.getElementById('timing-feedback').textContent = `Tap: ${Math.round(minDiff)} ms ${correct ? '✅' : '⚠️'}`;
+  state.timing.total++;
+  if (correct) state.timing.correct++;
+  updateBKTWithDifficulty('timing', correct, 1.0);
+  const pct = Math.round((state.timing.correct / state.timing.total) * 100);
+  document.getElementById('timing-accuracy').textContent = pct + '%';
+  saveState();
+  renderBKTPanel();
+}
+function stopMetronome() {
+  metronomeActive = false;
+  if (metronomeInterval) clearInterval(metronomeInterval);
+  document.removeEventListener('keydown', onUserTap);
+  document.getElementById('metronome-toggle').textContent = '▶ Iniciar';
+  document.getElementById('beat-indicator').classList.remove('active');
+}
+function compareOnsetToBeat(now) {
+  if (beatTimes.length === 0) return;
+  let minDiff = Infinity;
+  for (const bt of beatTimes.slice(-8)) { const d = Math.abs(now - bt); if (d < minDiff) minDiff = d; }
+  const correct = minDiff < 80;
+  document.getElementById('timing-feedback').textContent = `Onset: ${Math.round(minDiff)} ms ${correct ? '✅' : '⚠️'}`;
+  state.timing.total++;
+  if (correct) state.timing.correct++;
+  updateBKTWithDifficulty('timing', correct, 1.0);
+  const pct = Math.round((state.timing.correct / state.timing.total) * 100);
+  document.getElementById('timing-accuracy').textContent = pct + '%';
+  saveState();
+  renderBKTPanel();
+}
+
+// ============================================================
+// 10. ENTRENAMIENTO AUDITIVO
+// ============================================================
+const earExercises = [
+  { type: 'interval', name: '3ª mayor', notes: [261.63, 329.63], options: ['3ª mayor','3ª menor','5ª justa','8ª'] },
+  { type: 'interval', name: '3ª menor', notes: [261.63, 311.13], options: ['3ª mayor','3ª menor','5ª justa','8ª'] },
+  { type: 'interval', name: '5ª justa', notes: [261.63, 392.00], options: ['3ª mayor','3ª menor','5ª justa','8ª'] },
+  { type: 'interval', name: '8ª', notes: [261.63, 523.25], options: ['3ª mayor','3ª menor','5ª justa','8ª'] },
+  { type: 'triad', name: 'mayor', notes: [261.63, 329.63, 392.00], options: ['mayor','menor','disminuida','aumentada'] },
+  { type: 'triad', name: 'menor', notes: [261.63, 311.13, 392.00], options: ['mayor','menor','disminuida','aumentada'] },
+  { type: 'triad', name: 'disminuida', notes: [261.63, 311.13, 369.99], options: ['mayor','menor','disminuida','aumentada'] },
+  { type: 'triad', name: 'aumentada', notes: [261.63, 329.63, 415.30], options: ['mayor','menor','disminuida','aumentada'] },
+];
+let currentEar = null;
+function newEarExercise() {
+  const earIntMastery = SKILLS['ear_intervalos'].L0;
+  const earTriMastery = SKILLS['ear_triadas'].L0;
+  const preferType = earIntMastery < earTriMastery ? 'interval' : 'triad';
+  const pool = earExercises.filter(e => e.type === preferType);
+  currentEar = pool[Math.floor(Math.random() * pool.length)];
+  document.getElementById('ear-question').textContent =
+    currentEar.type === 'interval' ? '¿Qué intervalo suena?' : '¿Qué tipo de tríada suena?';
+  const grid = document.getElementById('ear-options');
+  grid.innerHTML = '';
+  currentEar.options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn'; btn.textContent = opt;
+    btn.addEventListener('click', () => {
+      const correct = opt === currentEar.name;
+      grid.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+      if (correct) {
+        btn.classList.add('correct');
+        document.getElementById('ear-feedback').textContent = '✅ ¡Correcto!';
+        document.getElementById('ear-feedback').style.color = '#4caf50';
+        state.ear.correct++;
+      } else {
+        btn.classList.add('wrong');
+        const correctBtn = [...grid.children].find(b => b.textContent === currentEar.name);
+        if (correctBtn) correctBtn.classList.add('correct');
+        document.getElementById('ear-feedback').textContent = '❌ Era: ' + currentEar.name;
+        document.getElementById('ear-feedback').style.color = '#f44336';
+      }
+      state.ear.total++;
+      const skillId = EAR_TYPE_TO_SKILL[currentEar.type];
+      updateBKTWithDifficulty(skillId, correct, 1.0);
+      const pct = Math.round((state.ear.correct / state.ear.total) * 100);
+      document.getElementById('ear-accuracy').textContent = pct + '%';
+      if (state.ear.correct >= 5 && !state.badges["ear-training"]) { state.badges["ear-training"] = true; renderBadges(); }
+      saveState();
+      renderBKTPanel();
+      document.getElementById('next-ear-btn').disabled = false;
+    });
+    grid.appendChild(btn);
+  });
+  document.getElementById('ear-feedback').textContent = '';
+  document.getElementById('next-ear-btn').disabled = true;
+}
+function playEarExercise() {
+  if (!currentEar) return;
+  const notes = currentEar.notes;
+  if (currentEar.type === 'interval') {
+    playNote(notes[0], 0.5);
+    setTimeout(() => playNote(notes[1], 0.6), 550);
+  } else {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+    notes.forEach(freq => {
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.type = 'sine'; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.0);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(); osc.stop(ctx.currentTime + 1.0);
+    });
+  }
+}
+
+// ============================================================
+// 11. PRODUCCIÓN
+// ============================================================
+const prodTargets = [
+  { type: 'note', label: 'Mi (1ª cuerda)', notes: ['Mi'], freq: 329.63 },
+  { type: 'note', label: 'La (5ª cuerda al aire)', notes: ['La'], freq: 110.00 },
+  { type: 'interval', label: '3ª mayor Do→Mi', notes: ['Do', 'Mi'] },
+  { type: 'triad', label: 'Do mayor', notes: ['Do', 'Mi', 'Sol'], chordKey: 'Do' },
+  { type: 'triad', label: 'La menor', notes: ['La', 'Do', 'Mi'], chordKey: 'Lam' },
+  { type: 'triad', label: 'Mi mayor', notes: ['Mi', 'Sol#', 'Si'], chordKey: 'Mi' },
+];
+let currentProd = null;
+function playProductionTarget() {
+  const prodMastery = SKILLS['prod_notas'].L0;
+  const triMastery = SKILLS['triadas_mayores'].L0;
+  const preferType = prodMastery < triMastery ? 'note' : 'triad';
+  const pool = prodTargets.filter(t => t.type === preferType);
+  currentProd = pool[Math.floor(Math.random() * pool.length)];
+  document.getElementById('prod-question').textContent = `Toca: ${currentProd.label}`;
+  document.getElementById('prod-feedback').textContent = '';
+  document.getElementById('check-prod-btn').disabled = !tunerActive;
+  if (currentProd.type === 'note') {
+    playNote(currentProd.freq, 0.8);
+  } else {
+    currentProd.notes.forEach((n, i) => {
+      setTimeout(() => playNote(NOTE_FREQS[n] || 440, 0.5), i * 400);
+    });
+  }
+}
+function checkProduction() {
+  if (!tunerActive) {
+    document.getElementById('prod-feedback').textContent = 'Activa el micrófono primero';
+    document.getElementById('prod-feedback').style.color = '#ff9800';
+    return;
+  }
+  const fb = document.getElementById('prod-feedback');
+  fb.textContent = 'Escuchando…'; fb.style.color = '#8899bb';
+  const samples = [];
+  let count = 0;
+  const interval = setInterval(() => {
+    const buffer = new Float32Array(tunerAnalyser.fftSize);
+    tunerAnalyser.getFloatTimeDomainData(buffer);
+    if (currentProd.type === 'note') {
+      const yin = yinPitch(buffer, tunerAudioCtx.sampleRate);
+      if (yin && yin.clarity > 0.5) samples.push({ kind: 'note', freq: yin.freq });
+    } else {
+      const chord = detectChordChroma(tunerAnalyser);
+      if (chord) samples.push({ kind: 'chord', chord: chord.chord, conf: chord.confidence });
+    }
+    count++;
+    if (count >= 5) { clearInterval(interval); evaluateProduction(samples); }
+  }, 300);
+}
+function evaluateProduction(samples) {
+  const fb = document.getElementById('prod-feedback');
+  if (samples.length === 0) {
+    fb.textContent = 'No se detectó señal clara. Toca de nuevo.';
+    fb.style.color = '#ff9800';
+    return;
+  }
+  let correct = false, detail = '';
+  if (currentProd.type === 'note') {
+    const targetMidi = Math.round(69 + 12 * Math.log2(currentProd.freq / 440));
+    const counts = {};
+    samples.forEach(s => {
+      const m = Math.round(69 + 12 * Math.log2(s.freq / 440));
+      counts[m] = (counts[m] || 0) + 1;
+    });
+    const bestMidi = parseInt(Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b));
+    const diff = Math.abs(bestMidi - targetMidi);
+    correct = diff === 0;
+    detail = `Detectado: ${CHROMATIC[bestMidi % 12]} (${diff === 0 ? 'correcto' : 'diferencia ' + diff + ' semitonos'})`;
+  } else {
+    const counts = {};
+    samples.forEach(s => { counts[s.chord] = (counts[s.chord] || 0) + 1; });
+    const bestChord = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+    const targetKey = currentProd.chordKey || currentProd.label.split(' ')[0];
+    correct = bestChord === targetKey;
+    detail = `Detectado: ${bestChord}${correct ? ' ✅' : ' (esperado ' + targetKey + ')'}`;
+  }
+  fb.textContent = (correct ? '✅ ' : '❌ ') + detail;
+  fb.style.color = correct ? '#4caf50' : '#f44336';
+  state.prod.total++;
+  if (correct) { state.prod.correct++; state.picks++; document.getElementById('picks-value').textContent = state.picks; }
+  const skillId = PROD_TYPE_TO_SKILL[currentProd.type] || 'prod_notas';
+  updateBKTWithDifficulty(skillId, correct, 1.0);
+  const pct = Math.round((state.prod.correct / state.prod.total) * 100);
+  document.getElementById('prod-accuracy').textContent = pct + '%';
+  saveState();
+  renderBKTPanel();
+}
+
+// ============================================================
+// 12. DIAGRAMA
+// ============================================================
+// Digitaciones de acordes abiertos. frets: cuerdas 6ª→1ª (-1 = apagada, 0 = al aire); fingers: dedo (1-4) por cuerda.
+const chordShapes = {
+  Do:  { title: 'Do mayor',  frets: [-1, 3, 2, 0, 1, 0], fingers: [null, 3, 2, null, 1, null] },
+  Sol: { title: 'Sol mayor', frets: [3, 2, 0, 0, 0, 3],  fingers: [2, 1, null, null, null, 3] },
+  Re:  { title: 'Re mayor',  frets: [-1, -1, 0, 2, 3, 2], fingers: [null, null, null, 1, 3, 2] },
+  La:  { title: 'La mayor',  frets: [-1, 0, 2, 2, 2, 0], fingers: [null, null, 1, 2, 3, null] },
+  Mi:  { title: 'Mi mayor',  frets: [0, 2, 2, 1, 0, 0],  fingers: [null, 2, 3, 1, null, null] },
+  Lam: { title: 'La menor',  frets: [-1, 0, 2, 2, 1, 0], fingers: [null, null, 3, 2, 1, null] },
+  Rem: { title: 'Re menor',  frets: [-1, -1, 0, 2, 3, 1], fingers: [null, null, null, 2, 3, 1] },
+  Mim: { title: 'Mi menor',  frets: [0, 2, 2, 0, 0, 0],  fingers: [null, 2, 3, null, null, null] },
+};
+// Diagrama SVG propio (sin dependencias; funciona sin conexión)
+function chordSVG(key) {
+  const sh = chordShapes[key]; if (!sh) return '';
+  const W = 150, H = 178, x0 = 24, dx = 20.4, y0 = 44, dy = 26, nF = 4; let g = '';
+  g += `<text x="75" y="15" text-anchor="middle" font-size="13" font-weight="600" fill="#e8edf5">${sh.title}</text>`;
+  g += `<line x1="${x0}" y1="${y0}" x2="${x0 + 5 * dx}" y2="${y0}" stroke="#e8edf5" stroke-width="4"/>`;
+  for (let f = 1; f <= nF; f++) g += `<line x1="${x0}" y1="${y0 + f * dy}" x2="${x0 + 5 * dx}" y2="${y0 + f * dy}" stroke="#4a5a74" stroke-width="1"/>`;
+  for (let i = 0; i < 6; i++) {
+    const x = x0 + i * dx, fr = sh.frets[i];
+    g += `<line x1="${x}" y1="${y0}" x2="${x}" y2="${y0 + nF * dy}" stroke="#a0b3cc" stroke-width="1.2"/>`;
+    if (fr < 0) g += `<text x="${x}" y="${y0 - 10}" text-anchor="middle" font-size="12" fill="#f44336">×</text>`;
+    else if (fr === 0) g += `<circle cx="${x}" cy="${y0 - 14}" r="4.5" fill="none" stroke="#a0b3cc" stroke-width="1.3"/>`;
+    else {
+      const cy = y0 + (fr - 0.5) * dy;
+      g += `<circle cx="${x}" cy="${cy}" r="8.5" fill="#f5c542"/><text x="${x}" y="${cy + 4}" text-anchor="middle" font-size="11" font-weight="700" fill="#1b2230">${sh.fingers[i] || ''}</text>`;
+    }
+    g += `<text x="${x}" y="${y0 + nF * dy + 14}" text-anchor="middle" font-size="9" fill="#667799">${6 - i}</text>`;
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Diagrama de ${sh.title}">${g}</svg>`;
+}
+let currentChord = 'Do';
+function renderChordDiagram(chord) {
+  document.getElementById('chord-diagram').innerHTML = chordSVG(chord);
+}
+function renderChordSelector() {
+  const sel = document.getElementById('chord-selector');
+  sel.innerHTML = '';
+  Object.keys(chordShapes).forEach(chord => {
+    const btn = document.createElement('button');
+    btn.className = 'chord-btn' + (chord === currentChord ? ' active' : '');
+    btn.textContent = chord;
+    btn.addEventListener('click', () => { currentChord = chord; renderChordSelector(); renderChordDiagram(chord); });
+    sel.appendChild(btn);
+  });
+}
+
+// ============================================================
+// 14. RUTA DE PRÁCTICA (acordes abiertos + cambios cronometrados)
+// ============================================================
+const CHORD_NAME = { Mim: 'Mi menor', Lam: 'La menor', Mi: 'Mi mayor', La: 'La mayor', Re: 'Re mayor', Rem: 'Re menor', Do: 'Do mayor', Sol: 'Sol mayor' };
+const CHORD_STAGES = [['Mim', 'Lam'], ['Mi', 'La'], ['Re', 'Rem'], ['Do', 'Sol']];   // se avanza al dominar el escalón, no por calendario
+const CHORD_D = { Mim: 0.9, Lam: 1.0, Mi: 1.0, La: 1.0, Re: 1.1, Rem: 1.2, Do: 1.2, Sol: 1.3 };   // d>1 = más difícil
+const CHANGE_PAIRS = [['Mim', 'Lam'], ['Mi', 'La'], ['La', 'Re'], ['Re', 'Rem'], ['Lam', 'Do'], ['Do', 'Sol'], ['Sol', 'Re'], ['Mim', 'Do']];
+const CLEAN_NEEDED_TODAY = 3, CLEAN_DAYS_TO_LEARN = 2, THEORY_TODAY_NEEDED = 5;
+const CHORD_COVERAGE = 0.5, CHORD_MIN_SHARE = 0.08;     // umbrales de verificación (calibrados con audio sintético)
+let LISTEN_SECONDS = 6, CHANGE_TIMEOUT_SEC = 8; const MIC_MIN_RMS = 0.008, ONSET_RATIO = 1.6, ONSET_SETTLE_MS = 250, ONSET_VALID_MS = 3000;
+let CHANGES_ROUND_SEC = 60;
+const THEORY_SKILLS = ['notas', 'intervalos', 'triadas_mayores', 'triadas_menores'];
+
+function todayKey() { return new Date().toLocaleDateString('sv-SE'); }
+function practiceState() {
+  if (!state.practice) state.practice = { chords: {}, changes: {}, done: {} };
+  const P = state.practice; P.chords = P.chords || {}; P.changes = P.changes || {}; P.done = P.done || {};
+  return P;
+}
+function chordRec(k) { const P = practiceState(); return P.chords[k] || (P.chords[k] = { clean: [], day: null, n: 0 }); }
+function isLearned(k) { return (chordRec(k).clean || []).length >= CLEAN_DAYS_TO_LEARN; }
+function currentStageIdx() { const i = CHORD_STAGES.findIndex(st => !st.every(isLearned)); return i < 0 ? CHORD_STAGES.length : i; }
+function availableChords() { const s = currentStageIdx(); return CHORD_STAGES.slice(0, Math.min(s + 1, CHORD_STAGES.length)).flat(); }
+function chordOfTheDay() {
+  const s = currentStageIdx(), av = availableChords();
+  if (s >= CHORD_STAGES.length) { const day = Math.floor(Date.now() / 86400000); return av[day % av.length]; }   // todo aprendido: repaso rotativo
+  return CHORD_STAGES[s].slice().sort((a, b) => chordRec(a).clean.length - chordRec(b).clean.length)[0];
+}
+function availablePairs() { const av = new Set(availableChords()); return CHANGE_PAIRS.filter(([a, b]) => av.has(a) && av.has(b)); }
+function todayDone() { const P = practiceState(), d = todayKey(); return P.done[d] || (P.done[d] = {}); }
+function theoryToday() {
+  const d0 = new Date(); d0.setHours(0, 0, 0, 0);
+  return (state.attempts || []).filter(a => a.t >= d0.getTime() && THEORY_SKILLS.includes(a.skill)).length;
+}
+
+// --- Audio: verificación de un acorde objetivo ---
+function micRms() {
+  if (!tunerAnalyser) return 0;
+  const buf = new Float32Array(tunerAnalyser.fftSize); tunerAnalyser.getFloatTimeDomainData(buf);
+  let s = 0; for (let i = 0; i < buf.length; i++) s += buf[i] * buf[i]; return Math.sqrt(s / buf.length);
+}
+// Detector de ataque: el acorde solo vale si se ha tocado DESPUÉS de empezar a escuchar
+// (si no, un acorde anterior que sigue sonando daría por bueno cualquier intento).
+function makeOnsetDetector() {
+  const hist = [];
+  return (rms) => { const mn = hist.length ? Math.min(...hist.slice(-6)) : rms; const on = hist.length >= 2 && rms >= MIC_MIN_RMS && rms > ONSET_RATIO * Math.max(mn, 1e-4); hist.push(rms); return on; };
+}
+// El acorde objetivo debe ser además el que mejor encaja entre todos los conocidos
+// (sin esto, Re menor se daba por Re mayor y Do por Mi menor en las pruebas sintéticas).
+// Escucha de un acorde: tras cada ataque nuevo se espera a que pase el ruido de la púa (ONSET_SETTLE_MS)
+// y se promedia el chroma desde el ataque; así ni el acorde anterior ni el transitorio dan falsos positivos.
+function makeChordListener() {
+  const od = makeOnsetDetector(); let onsetAt = -1e9, avg = null;
+  return {
+    step(now) {
+      const rms = micRms(); if (od(rms)) { onsetAt = now; avg = null; }
+      const c = computeChroma(tunerAnalyser);
+      avg = avg ? Float32Array.from(avg, (v, i) => 0.6 * v + 0.4 * c[i]) : c;
+      const age = now - onsetAt;
+      return { rms, chroma: avg, valid: rms >= MIC_MIN_RMS && age >= ONSET_SETTLE_MS && age <= ONSET_VALID_MS };
+    },
+    reset() { onsetAt = -1e9; avg = null; }
+  };
+}
+function chordMatches(chroma, key) {
+  const t = CHORD_TEMPLATES[key]; let cov = 0, mn = 1;
+  t.forEach((v, i) => { if (v) { cov += chroma[i]; mn = Math.min(mn, chroma[i]); } });
+  let best = null, bs = -1; for (const [k, tpl] of Object.entries(CHORD_TEMPLATES)) { const sc = cosineSimilarity(chroma, tpl); if (sc > bs) { bs = sc; best = k; } }
+  return { ok: best === key && cov >= CHORD_COVERAGE && mn >= CHORD_MIN_SHARE, cov, mn, best };
+}
+async function ensureMic() {
+  if (!tunerActive) await startTuner();
+  return !!(tunerActive && tunerAnalyser);
+}
+// Con el suavizado por defecto (0,8) el espectro tarda ~1 s en olvidar el acorde anterior: se baja mientras se escucha.
+function fastSpectrum(on) { if (tunerAnalyser) tunerAnalyser.smoothingTimeConstant = on ? 0.2 : 0.8; }
+function logPractice(skill, ok, d, itemId) { updateBKTWithDifficulty(skill, !!ok, d, null, itemId, 'ruta'); saveState(); renderBKTPanel(); }
+
+// --- Paso 2: acorde de hoy ---
+let listening = false;
+async function listenForChord() {
+  if (listening) return;
+  const key = document.getElementById('pr-chord-select').value, fb = document.getElementById('pr-chord-feedback'), btn = document.getElementById('pr-listen-btn');
+  if (!(await ensureMic())) { fb.textContent = 'Micrófono no disponible.'; return; }
+  listening = true; fastSpectrum(true); btn.disabled = true; let streak = 0, ok = false, maxRms = 0, best = 0; const t0 = performance.now(), L = makeChordListener();
+  const iv = setInterval(() => {
+    if (!tunerAnalyser) { finish(); return; }
+    const st = L.step(performance.now()); maxRms = Math.max(maxRms, st.rms);
+    const m = chordMatches(st.chroma, key); if (st.valid) best = Math.max(best, m.cov);
+    streak = (st.valid && m.ok) ? streak + 1 : 0;
+    const left = Math.max(0, LISTEN_SECONDS - (performance.now() - t0) / 1000);
+    fb.style.color = '#8899bb'; fb.textContent = `Escuchando… ${left.toFixed(0)} s · parecido con ${CHORD_NAME[key]}: ${Math.round(m.cov * 100)} %`;
+    if (streak >= 2) { ok = true; finish(); } else if (left <= 0) finish();
+  }, 120);
+  function finish() {
+    clearInterval(iv); listening = false; fastSpectrum(false); btn.disabled = false;
+    if (maxRms < MIC_MIN_RMS) { fb.style.color = '#ff9800'; fb.textContent = 'No se oyó nada. Acerca el micrófono y vuelve a intentarlo.'; return; }
+    logPractice('acordes_tocados', ok, CHORD_D[key], 'chord-' + key);
+    const r = chordRec(key), d = todayKey(); if (r.day !== d) { r.day = d; r.n = 0; }
+    if (ok) {
+      r.n++; fb.style.color = '#4caf50'; fb.textContent = `✅ ${CHORD_NAME[key]} suena limpio (${r.n}/${CLEAN_NEEDED_TODAY} hoy)`;
+      if (r.n >= CLEAN_NEEDED_TODAY && !r.clean.includes(d)) { r.clean.push(d); fb.textContent += ' · ¡acorde limpio hoy!'; }
+      if (r.n >= CLEAN_NEEDED_TODAY) todayDone().chord = true;
+    } else { fb.style.color = '#f44336'; fb.textContent = `❌ No suena como ${CHORD_NAME[key]} (parecido máximo ${Math.round(best * 100)} %). Revisa que cada cuerda suene sin roces ni cuerdas apagadas.`; }
+    saveState(); renderPractice(true);
+  }
+}
+
+// --- Paso 3: cambios de acorde cronometrados ---
+let round = null, beatTimer = null;
+function pairKey(p) { return p[0] + '-' + p[1]; }
+async function startChangesRound() {
+  if (round) { endRound(false); return; }
+  const sel = document.getElementById('pr-pair-select').value; if (!sel) return;
+  const pair = sel.split('-'), fb = document.getElementById('pr-changes-feedback');
+  if (!(await ensureMic())) { fb.textContent = 'Micrófono no disponible.'; return; }
+  round = { pair, target: pair[0], other: pair[1], setup: true, changes: 0, hits: 0, misses: 0, streak: 0, started: performance.now(), promptStart: performance.now(), maxRms: 0, L: makeChordListener() };
+  fastSpectrum(true); document.getElementById('pr-round-btn').textContent = '⏹ Parar';
+  fb.style.color = '#8899bb'; fb.textContent = '';
+  const bpm = Math.min(120, Math.max(30, +document.getElementById('pr-bpm').value || 50));
+  clearInterval(beatTimer); const dot = document.getElementById('pr-beat');
+  beatTimer = setInterval(() => { dot.classList.add('on'); setTimeout(() => dot.classList.remove('on'), 120); }, 60000 / bpm);
+  round.iv = setInterval(roundTick, 120); roundTick();
+}
+function roundTick() {
+  if (!round) return;
+  if (!tunerAnalyser) { endRound(false); return; }
+  const now = performance.now(), el = (now - round.started) / 1000;
+  if (el >= CHANGES_ROUND_SEC) { endRound(true); return; }
+  const st = round.L.step(now); round.maxRms = Math.max(round.maxRms, st.rms);
+  const m = chordMatches(st.chroma, round.target);
+  round.streak = (st.valid && m.ok) ? round.streak + 1 : 0;
+  const pairD = (CHORD_D[round.pair[0]] + CHORD_D[round.pair[1]]) / 2 + 0.1, item = 'chg-' + pairKey(round.pair);
+  if (round.streak >= 2) {
+    if (!round.setup) { round.changes++; round.hits++; logPractice('cambios_acorde', true, pairD, item); }
+    round.setup = false; [round.target, round.other] = [round.other, round.target]; round.streak = 0; round.promptStart = now; round.L.reset();
+  } else if (!round.setup && (now - round.promptStart) / 1000 > CHANGE_TIMEOUT_SEC) {
+    round.misses++; logPractice('cambios_acorde', false, pairD, item); round.promptStart = now;
+  }
+  document.getElementById('pr-target').textContent = (round.setup ? 'Empieza con ' : 'Ahora ') + CHORD_NAME[round.target];
+  document.getElementById('pr-timer').textContent = Math.ceil(CHANGES_ROUND_SEC - el) + ' s';
+  document.getElementById('pr-count').textContent = round.changes + ' cambios';
+}
+function endRound(completed) {
+  const r = round; if (!r) return; round = null; clearInterval(r.iv); clearInterval(beatTimer); fastSpectrum(false);
+  const fb = document.getElementById('pr-changes-feedback'); document.getElementById('pr-round-btn').textContent = '▶ Empezar 60 s';
+  document.getElementById('pr-target').textContent = '—'; document.getElementById('pr-timer').textContent = ''; document.getElementById('pr-count').textContent = '';
+  if (!completed) { fb.style.color = '#ff9800'; fb.textContent = 'Ronda detenida.'; return; }
+  if (r.setup) { fb.style.color = '#ff9800'; fb.textContent = r.maxRms < MIC_MIN_RMS ? 'No se oyó nada. Acerca el micrófono.' : 'No se detectó el primer acorde. Revisa el acorde en el paso 2.'; return; }
+  const P = practiceState(), k = pairKey(r.pair), rec = P.changes[k] || (P.changes[k] = { best: 0, rounds: [] });
+  const prevBest = rec.best; rec.best = Math.max(rec.best, r.changes); rec.rounds.push({ d: todayKey(), n: r.changes }); if (rec.rounds.length > 20) rec.rounds.shift();
+  todayDone().changes = true; saveState();
+  fb.style.color = '#4caf50'; fb.textContent = `${r.changes} cambios en ${CHANGES_ROUND_SEC} s` + (r.changes > prevBest ? ' · ¡nuevo récord!' : ` · récord ${rec.best}`) + (r.misses ? ` · ${r.misses} sin detectar` : '');
+  renderPractice(true);
+}
+
+// --- Pintado ---
+function renderPractice(keepFeedback) {
+  const P = practiceState(), d = todayKey(), done = P.done[d] || {};
+  const th = theoryToday(), thDone = th >= THEORY_TODAY_NEEDED;
+  const stepsDone = [!!done.warm, !!done.chord, !!done.changes, thDone];
+  const count = stepsDone.filter(Boolean).length, days = Object.values(P.done).filter(x => x && Object.values(x).some(Boolean)).length;
+  document.getElementById('practice-summary').textContent = `Hoy: ${count}/4 pasos · Días con práctica: ${days}`;
+  const mark = (id, ok) => { const el = document.getElementById(id); el.classList.toggle('pr-done', ok); el.querySelector('.pr-title .pr-ok').textContent = ok ? ' ✅' : ''; };
+  mark('pr-step-warm', stepsDone[0]); mark('pr-step-chord', stepsDone[1]); mark('pr-step-changes', stepsDone[2]); mark('pr-step-theory', stepsDone[3]);
+  // acorde
+  const av = availableChords(), sel = document.getElementById('pr-chord-select'), cur = sel.value || chordOfTheDay();
+  sel.innerHTML = ''; av.forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = CHORD_NAME[k] + (isLearned(k) ? ' ✔' : ''); sel.appendChild(o); });
+  sel.value = av.includes(cur) ? cur : chordOfTheDay();
+  const key = sel.value, r = chordRec(key), tn = r.day === d ? r.n : 0;
+  document.getElementById('pr-chord-diagram').innerHTML = chordSVG(key);
+  document.getElementById('pr-chord-progress').textContent = `${CHORD_NAME[key]}: ${tn}/${CLEAN_NEEDED_TODAY} limpios hoy · días limpios ${r.clean.length}/${CLEAN_DAYS_TO_LEARN}${isLearned(key) ? ' · aprendido' : ''}`;
+  if (!keepFeedback) document.getElementById('pr-chord-feedback').textContent = '';
+  // cambios
+  const ps = document.getElementById('pr-pair-select'), pairs = availablePairs(), curP = ps.value;
+  ps.innerHTML = ''; pairs.forEach(p => { const o = document.createElement('option'); o.value = pairKey(p); const b = (P.changes[pairKey(p)] || {}).best; o.textContent = `${CHORD_NAME[p[0]]} ⇄ ${CHORD_NAME[p[1]]}` + (b ? ` (récord ${b})` : ''); ps.appendChild(o); });
+  if (pairs.some(p => pairKey(p) === curP)) ps.value = curP;
+  document.getElementById('pr-round-btn').disabled = !pairs.length && !round;
+  // teoría
+  document.getElementById('pr-theory-progress').textContent = `${Math.min(th, THEORY_TODAY_NEEDED)}/${THEORY_TODAY_NEEDED} preguntas de teoría hoy`;
+  // ruta de acordes
+  const cur2 = currentStageIdx(), cont = document.getElementById('pr-curriculum'); cont.innerHTML = '';
+  CHORD_STAGES.forEach((st, i) => {
+    const row = document.createElement('div'); row.className = 'pr-stage';
+    const status = i < cur2 ? 'completado' : (i === cur2 ? 'en curso' : 'bloqueado');
+    row.innerHTML = `<b>Escalón ${i + 1}</b> <span class="pr-chip">${status}</span> ` + st.map(k => `${CHORD_NAME[k]} ${isLearned(k) ? '●' : (chordRec(k).clean.length ? '◐' : '○')}`).join(' · ');
+    cont.appendChild(row);
+  });
+}
+function initPractice() {
+  document.getElementById('pr-warm-btn').addEventListener('click', () => { todayDone().warm = true; saveState(); renderPractice(true); });
+  document.getElementById('pr-chord-select').addEventListener('change', () => renderPractice());
+  document.getElementById('pr-listen-btn').addEventListener('click', listenForChord);
+  document.getElementById('pr-round-btn').addEventListener('click', startChangesRound);
+  document.getElementById('pr-theory-btn').addEventListener('click', () => document.getElementById('theory-box').scrollIntoView({ behavior: 'smooth' }));
+  renderPractice();
+}
+
+// ============================================================
+// 13. INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  loadState();
+  applyForgetting();
+  renderMap(); renderBadges(); renderTheory(); renderFretboard();
+  renderChordSelector(); renderChordDiagram(currentChord);
+  renderBKTPanel();
+  document.getElementById('picks-value').textContent = state.picks;
+  document.getElementById('streak-value').textContent = state.streak;
+  if (state.timing.total > 0) document.getElementById('timing-accuracy').textContent = Math.round((state.timing.correct/state.timing.total)*100) + '%';
+  if (state.ear.total > 0) document.getElementById('ear-accuracy').textContent = Math.round((state.ear.correct/state.ear.total)*100) + '%';
+  if (state.prod.total > 0) document.getElementById('prod-accuracy').textContent = Math.round((state.prod.correct/state.prod.total)*100) + '%';
+
+  document.getElementById('next-question-btn').addEventListener('click', () => {
+    state.streak++; document.getElementById('streak-value').textContent = state.streak;
+    if (state.streak >= 7 && !state.badges["streak-7"]) { state.badges["streak-7"] = true; renderBadges(); }
+    saveState(); renderTheory(); renderMap();
+  });
+  document.getElementById('export-attempts-btn').addEventListener('click', exportAttempts);
+  initCalibUI();
+  initPractice();
+  const ps = document.getElementById('policy-select');
+  ps.value = state.policy || 'auto';
+  ps.addEventListener('change', () => { if (ps.value === 'manual') return; manualLevel = null; state.policy = ps.value; saveState(); renderTheory(); });
+  document.getElementById('reset-progress-btn').addEventListener('click', () => {
+    if (!confirm('¿Reiniciar todo?')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    state = JSON.parse(JSON.stringify(defaultState));
+    for (const [id, s] of Object.entries(SKILLS)) {
+      s.L0 = SKILL_DEFAULTS[id].L0;
+      s.lastPractice = null; s.lastDecay = null;
+    }
+    applyCalib(CALIB_DEFAULT); if (window.calibShow) window.calibShow();
+    manualLevel = null; lastItemId = null; if (round) endRound(false);
+    { const ps = document.getElementById('policy-select'); if (ps) ps.value = 'auto'; }
+    renderMap(); renderBadges(); renderTheory(); renderBKTPanel(); renderPractice();
+    document.getElementById('picks-value').textContent = '0';
+    document.getElementById('streak-value').textContent = '0';
+    document.getElementById('timing-accuracy').textContent = '—';
+    document.getElementById('ear-accuracy').textContent = '—';
+    document.getElementById('prod-accuracy').textContent = '—';
+  });
+  startMicBtn.addEventListener('click', startTuner);
+  stopMicBtn.addEventListener('click', stopTuner);
+  document.getElementById('detect-chord-btn').addEventListener('click', () => {
+    if (!tunerActive || !tunerAnalyser) return;
+    const result = detectChordChroma(tunerAnalyser);
+    const el = document.getElementById('chord-detect-result');
+    if (result) { el.textContent = `${result.chord} (${Math.round(result.confidence*100)}%)`; el.style.color = '#4caf50'; }
+    else { el.textContent = 'No detectado'; el.style.color = '#ff9800'; }
+  });
+  document.getElementById('metronome-toggle').addEventListener('click', () => {
+    if (metronomeActive) stopMetronome(); else startMetronome();
+  });
+  document.getElementById('play-ear-btn').addEventListener('click', playEarExercise);
+  document.getElementById('next-ear-btn').addEventListener('click', newEarExercise);
+  newEarExercise();
+  document.getElementById('play-prod-btn').addEventListener('click', playProductionTarget);
+  document.getElementById('check-prod-btn').addEventListener('click', checkProduction);
+  window.addEventListener('beforeunload', () => { if (tunerActive) stopTuner(); saveState(); });
+});
+</script>
+</body>
+</html>
