@@ -127,6 +127,7 @@
         <div id="pr-chord-diagram" class="pr-diagram"></div>
         <div class="pr-text" id="pr-chord-progress"></div>
         <button class="btn primary btn-sm" id="pr-listen-btn">🎧 Escuchar 6 s</button>
+        <button class="btn btn-sm" id="pr-manual-chord-btn" title="Si no tienes micrófono o el detector falla">✋ Lo toqué limpio (sin micrófono)</button>
         <div id="pr-chord-feedback" class="feedback-msg"></div>
       </div>
       <div class="pr-step" id="pr-step-changes">
@@ -136,6 +137,7 @@
         <div class="pr-big" id="pr-target">—</div>
         <div class="pr-text"><span id="pr-timer"></span> <span id="pr-count"></span></div>
         <button class="btn primary btn-sm" id="pr-round-btn">▶ Empezar 60 s</button>
+        <div class="pr-text">Sin micrófono: cuenta tus cambios en 60 s y anótalos <input type="number" id="pr-manual-n" min="0" max="80" value="10" style="width:48px;background:#1e2636;border:1px solid #3a4a62;color:#e8edf5;border-radius:0.3rem;padding:0.1rem;"> <button class="btn btn-sm" id="pr-manual-changes-btn">✋ Anotar</button></div>
         <div id="pr-changes-feedback" class="feedback-msg"></div>
         <div class="pr-text" style="font-size:0.65rem;">Cambia de acorde cuando la app te lo indique. Meta orientativa: 15-20 cambios al principio. El pulso es solo visual para no interferir con el micrófono.</div>
       </div>
@@ -176,7 +178,7 @@
       </div>
       <div style="font-size:0.65rem;color:#99aacc;margin:0.3rem 0;">Selección de preguntas:
         <select id="policy-select" style="background:#0f131f;color:#cfe0ff;border:1px solid #2e3a4e;border-radius:0.4rem;font-size:0.65rem;padding:0.15rem;">
-          <option value="auto">Auto (alterna ZPD / más débil por día)</option>
+          <option value="auto">Auto (alterna estrategia al azar por sesión)</option>
           <option value="zpd">Solo ZPD</option>
           <option value="weakest">Solo la más débil</option>
           <option value="manual" disabled>Nivel elegido en el mapa</option>
@@ -435,10 +437,21 @@ function initCalibUI() {
 
 // Registro de intentos para calibración (Fase 4)
 const MAX_ATTEMPTS = 5000;
+// Sesión = bloque de uso sin pausas de más de 2 h. Al empezar una, la política 'auto' se asigna al azar (zpd/weakest) para toda la sesión.
+const SESSION_GAP_MS = 2 * 3600e3;
+function currentSession() {
+  if (typeof state === 'undefined') return { id: 'x', arm: 'zpd' };
+  const now = Date.now(), c = state.session;
+  if (!c || now - c.last > SESSION_GAP_MS) {
+    state.session = { id: now.toString(36) + Math.floor(Math.random() * 1296).toString(36), start: now, last: now, arm: Math.random() < 0.5 ? 'zpd' : 'weakest' };
+  } else c.last = now;
+  return state.session;
+}
 function logAttempt(a) {
   if (typeof state === 'undefined') return;
   if (!Array.isArray(state.attempts)) state.attempts = [];
   a.dVersion = D_VERSION;
+  a.sid = currentSession().id;
   state.attempts.push(a);
   if (state.attempts.length > MAX_ATTEMPTS) state.attempts.splice(0, state.attempts.length - MAX_ATTEMPTS);
 }
@@ -521,6 +534,7 @@ function loadState() {
       state.questionIntervals = {};
       for (const [k, v] of Object.entries(p.questionIntervals || {})) if (ALL_ITEM_IDS.has(k)) state.questionIntervals[k] = v;   // descarta las claves antiguas por posición
       state.policy = ['auto', 'zpd', 'weakest'].includes(p.policy) ? p.policy : 'auto';
+      state.session = (p.session && p.session.id) ? p.session : null;
       state.timing = p.timing || { correct: 0, total: 0 };
       state.ear = p.ear || { correct: 0, total: 0 };
       state.prod = p.prod || { correct: 0, total: 0 };
@@ -964,7 +978,7 @@ function theorySkills() { return state.levels.map((l, i) => l.unlocked ? LEVEL_T
 function effectivePolicy() {
   if (manualLevel !== null) return 'manual';
   const p = state.policy || 'auto';
-  if (p === 'auto') return (Math.floor(Date.now() / 86400000) % 2) ? 'weakest' : 'zpd';
+  if (p === 'auto') return currentSession().arm;
   return p;
 }
 function pickSkill(pol) {
@@ -1573,7 +1587,27 @@ function renderPractice(keepFeedback) {
     cont.appendChild(row);
   });
 }
+// Registro manual (sin micrófono): cuenta para el progreso de la ruta, NO alimenta el BKT (no hay evidencia medida).
+function manualChord() {
+  const key = document.getElementById('pr-chord-select').value, fb = document.getElementById('pr-chord-feedback');
+  const r = chordRec(key), d = todayKey(); if (r.day !== d) { r.day = d; r.n = 0; }
+  r.n++; fb.style.color = '#4caf50'; fb.textContent = `✋ ${CHORD_NAME[key]} anotado a mano (${r.n}/${CLEAN_NEEDED_TODAY} hoy)`;
+  if (r.n >= CLEAN_NEEDED_TODAY && !r.clean.includes(d)) { r.clean.push(d); fb.textContent += ' · ¡acorde limpio hoy!'; }
+  if (r.n >= CLEAN_NEEDED_TODAY) todayDone().chord = true;
+  saveState(); renderPractice(true);
+}
+function manualChanges() {
+  const sel = document.getElementById('pr-pair-select').value, fb = document.getElementById('pr-changes-feedback'); if (!sel) return;
+  const n = Math.max(0, Math.min(80, parseInt(document.getElementById('pr-manual-n').value, 10) || 0));
+  const P = practiceState(), rec = P.changes[sel] || (P.changes[sel] = { best: 0, rounds: [] }), prev = rec.best;
+  rec.best = Math.max(rec.best, n); rec.rounds.push({ d: todayKey(), n, manual: true }); if (rec.rounds.length > 20) rec.rounds.shift();
+  todayDone().changes = true; saveState();
+  fb.style.color = '#4caf50'; fb.textContent = `✋ ${n} cambios anotados a mano` + (n > prev ? ' · ¡nuevo récord!' : ` · récord ${rec.best}`);
+  renderPractice(true);
+}
 function initPractice() {
+  document.getElementById('pr-manual-chord-btn').addEventListener('click', manualChord);
+  document.getElementById('pr-manual-changes-btn').addEventListener('click', manualChanges);
   document.getElementById('pr-warm-btn').addEventListener('click', () => { todayDone().warm = true; saveState(); renderPractice(true); });
   document.getElementById('pr-chord-select').addEventListener('change', () => renderPractice());
   document.getElementById('pr-listen-btn').addEventListener('click', listenForChord);
@@ -1583,10 +1617,33 @@ function initPractice() {
 }
 
 // ============================================================
+// AUTOTEST (?test=1 o localhost): banco de ítems y núcleo BKT, con referencia independiente (números de cuerda MIDI, no OPEN_STRINGS)
+// ============================================================
+function runSelfTests() {
+  const errs = [], MIDI = [64, 59, 55, 50, 45, 40];   // 1ª..6ª cuerda; id note-s{k} = (k+1)ª cuerda
+  for (const id of ALL_ITEM_IDS) {
+    let it; try { it = generateItem(id); } catch (e) { errs.push(id + ' lanza: ' + e.message); continue; }
+    if (it.itemId !== id || it.answer !== 0 || !it.skill) errs.push(id + ': campos');
+    if (new Set(it.options).size !== it.options.length) errs.push(id + ': opciones duplicadas');
+    if (it.options.some(o => EXOTIC.test(o))) errs.push(id + ': grafía exótica');
+    if (!(it.difficulty >= 0.5 && it.difficulty <= 2)) errs.push(id + ': d fuera de rango');
+    if (id.startsWith('note-')) { const [, s, f] = id.split('-'), k = +s.slice(1), fr = +f.slice(1);
+      if (it.options[0] !== PC_LABEL[(MIDI[k] + fr) % 12] || !it.q.includes((k + 1) + 'ª cuerda')) errs.push(id + ': nota incorrecta'); }
+  }
+  if (new Set(Object.values(buildCatalog()).flat()).size !== ALL_ITEM_IDS.size) errs.push('catálogo inconsistente');
+  const L = 0.5, G = 0.25, S = 0.10;
+  if (!(bktPredict(L, G, S, 0.9) > bktPredict(L, G, S, 1) && bktPredict(L, G, S, 1) > bktPredict(L, G, S, 1.2))) errs.push('signo de d');
+  if (Math.abs(bktPredict(L, G, S, 1) - (L * (1 - S) + (1 - L) * G)) > 1e-12) errs.push('d=1 ≠ BKT clásico');
+  console.log(errs.length ? '❌ autotest: ' + errs.length + ' errores' : '✅ autotest: ' + ALL_ITEM_IDS.size + ' ítems y BKT correctos', errs);
+  return errs;
+}
+
+// ============================================================
 // 13. INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
   loadState();
+  if (new URLSearchParams(location.search).has("test") || location.hostname === "localhost") window.__selfTest = runSelfTests();
   applyForgetting();
   renderMap(); renderBadges(); renderTheory(); renderFretboard();
   renderChordSelector(); renderChordDiagram(currentChord);
