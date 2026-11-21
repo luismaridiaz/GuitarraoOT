@@ -86,6 +86,11 @@
   .pr-beat { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #2e3a4e; vertical-align: middle; transition: background 0.05s; }
   .pr-beat.on { background: #f5c542; }
   .pr-stage { font-size: 0.72rem; color: #a0b3cc; margin-bottom: 0.3rem; }
+  .pr-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; margin: 0.3rem 0; }
+  .pr-cell { background: #0f131f; border: 1px solid #2e3a4e; border-radius: 0.3rem; text-align: center; font-size: 1rem; padding: 0.25rem 0; color: #cfe0ff; min-height: 1.6rem; }
+  .pr-cell.hit { border-color: #f5c542; }
+  .pr-cell.cur { background: #3a3012; }
+  .pr-extra { font-size: 0.6rem; color: #8899bb; font-weight: 400; }
   .pr-chip { background: #2a2510; color: #f5c542; border-radius: 0.6rem; padding: 0 0.4rem; font-size: 0.6rem; }
   .skill-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; font-size: 0.75rem; }
   .skill-name { flex: 0 0 130px; color: #a0b3cc; }
@@ -141,8 +146,43 @@
         <div id="pr-changes-feedback" class="feedback-msg"></div>
         <div class="pr-text" style="font-size:0.65rem;">Cambia de acorde cuando la app te lo indique. Meta orientativa: 15-20 cambios al principio. El pulso es solo visual para no interferir con el micrófono.</div>
       </div>
+      <div class="pr-step" id="pr-step-strum">
+        <div class="pr-title">4 · Rasgueo con patrón<span class="pr-ok"></span></div>
+        <select id="pr-strum-select" class="pr-select"></select>
+        <div class="pr-text">Pulso (BPM): <input type="number" id="pr-strum-bpm" value="50" min="40" max="100" style="width:52px;background:#1e2636;border:1px solid #3a4a62;color:#e8edf5;border-radius:0.3rem;padding:0.1rem;"> con <select id="pr-strum-chord" class="pr-select"></select></div>
+        <div id="pr-strum-grid" class="pr-grid"></div>
+        <div class="pr-big" id="pr-strum-status">—</div>
+        <button class="btn primary btn-sm" id="pr-strum-btn">▶ Empezar (1 compás de entrada + 4)</button>
+        <button class="btn btn-sm" id="pr-strum-manual">✋ Lo toqué bien (sin micrófono)</button>
+        <div id="pr-strum-feedback" class="feedback-msg"></div>
+        <div class="pr-text" style="font-size:0.65rem;">La app mide solo el ritmo: cuándo suena cada golpe. No distingue ↓ de ↑. Funciona mejor si apagas las cuerdas con la palma entre golpes. El pulso es visual.</div>
+      </div>
+      <div class="pr-step" id="pr-step-scale">
+        <div class="pr-title">5 · Escala nota a nota <span class="pr-extra">(extra)</span><span class="pr-ok"></span></div>
+        <select id="pr-scale-select" class="pr-select"></select>
+        <label class="pr-text"><input type="checkbox" id="pr-scale-down"> ida y vuelta</label>
+        <div class="pr-big" id="pr-scale-target">—</div>
+        <div class="pr-text" id="pr-scale-seq"></div>
+        <button class="btn primary btn-sm" id="pr-scale-btn">🎧 Empezar</button>
+        <button class="btn btn-sm" id="pr-scale-manual">✋ La toqué entera (sin micrófono)</button>
+        <div id="pr-scale-feedback" class="feedback-msg"></div>
+        <div class="pr-text" style="font-size:0.65rem;">Toca cada nota por separado y deja que suene. La app avanza cuando oye la nota que toca (tolera el cambio de octava).</div>
+      </div>
+      <div class="pr-step" id="pr-step-song">
+        <div class="pr-title">6 · Canción con acordes <span class="pr-extra">(extra)</span><span class="pr-ok"></span></div>
+        <select id="pr-song-select" class="pr-select"></select>
+        <input type="text" id="pr-song-custom" placeholder="Tu canción: un acorde por compás, p. ej. Sol Re Mim Do" style="width:100%;box-sizing:border-box;background:#0f131f;color:#cfe0ff;border:1px solid #2e3a4e;border-radius:0.4rem;font-size:0.75rem;padding:0.3rem;margin-bottom:0.3rem;">
+        <div class="pr-text">Patrón: <select id="pr-song-pattern" class="pr-select"></select> BPM <input type="number" id="pr-song-bpm" value="50" min="40" max="100" style="width:52px;background:#1e2636;border:1px solid #3a4a62;color:#e8edf5;border-radius:0.3rem;padding:0.1rem;"></div>
+        <div class="pr-big" id="pr-song-chord">—</div>
+        <div id="pr-song-diagram" class="pr-diagram"></div>
+        <div id="pr-song-grid" class="pr-grid"></div>
+        <button class="btn primary btn-sm" id="pr-song-btn">▶ Empezar (2 vueltas)</button>
+        <button class="btn btn-sm" id="pr-song-manual">✋ La toqué completa</button>
+        <div id="pr-song-feedback" class="feedback-msg"></div>
+        <div class="pr-text" style="font-size:0.65rem;">La app marca el compás y el cambio de acorde y mide el ritmo. No comprueba qué acorde suena: eso se practica en el paso 2. Acordes válidos: Do, Sol, Re, Rem, La, Lam, Mi, Mim.</div>
+      </div>
       <div class="pr-step" id="pr-step-theory">
-        <div class="pr-title">4 · Teoría<span class="pr-ok"></span></div>
+        <div class="pr-title">7 · Teoría<span class="pr-ok"></span></div>
         <div class="pr-text" id="pr-theory-progress"></div>
         <button class="btn btn-sm" id="pr-theory-btn">Ir a la teoría</button>
       </div>
@@ -227,6 +267,14 @@
       </div>
       <div class="flex-row mt-1">
         <button class="btn primary btn-sm" id="start-mic-btn">🎙️ Activar micrófono</button>
+        <button class="btn btn-sm" id="diag-btn">🔧 Probar micrófono</button>
+        <div id="diag-panel" style="display:none;font-size:0.7rem;line-height:1.5;color:#cfe0ff;background:#0f131f;border:1px solid #2e3a4e;border-radius:0.4rem;padding:0.4rem;margin:0.4rem 0;">
+          <div style="background:#1e2636;border-radius:4px;height:10px;overflow:hidden;"><div id="diag-bar" style="height:10px;width:0;background:#4caf50;"></div></div>
+          <div id="diag-text" style="white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:0.65rem;margin-top:0.3rem;"></div>
+          <button class="btn btn-sm" id="diag-rec-btn">⏺ Grabar 6 s y guardar WAV</button>
+          <textarea id="diag-summary" readonly rows="6" style="display:none;width:100%;box-sizing:border-box;margin-top:0.3rem;background:#141a26;color:#cfe0ff;border:1px solid #2e3a4e;border-radius:0.3rem;font-size:0.6rem;"></textarea>
+          <div class="pr-text" style="font-size:0.6rem;">Toca un acorde y mira qué oye la app. Si pulsas grabar, toca durante 6 s; el archivo WAV y el resumen sirven para ajustar el detector.</div>
+        </div>
         <button class="btn btn-sm" id="stop-mic-btn" disabled>⏹️ Detener</button>
       </div>
       <h3>🎶 Detección de acorde (chroma)</h3>
@@ -645,6 +693,15 @@ const centsFill = document.getElementById('cents-fill');
 const centsText = document.getElementById('cents-text');
 const freqText = document.getElementById('freq-text');
 
+// Umbral de volumen adaptativo: se mide ~0,7 s de ruido ambiente al activar el micrófono (una guitarra clásica suena mucho más bajo que una acústica).
+let micNoiseFloor = null;
+async function measureNoiseFloor() {
+  const buf = new Float32Array(tunerAnalyser.fftSize), vals = [];
+  const t0 = performance.now();
+  while (performance.now() - t0 < 700) { await new Promise(r => setTimeout(r, 50)); tunerAnalyser.getFloatTimeDomainData(buf); let s2 = 0; for (let i = 0; i < buf.length; i++) s2 += buf[i] * buf[i]; vals.push(Math.sqrt(s2 / buf.length)); }
+  vals.sort((a, b) => a - b); micNoiseFloor = vals[Math.floor(vals.length * 0.9)] || 0;
+  MIC_MIN_RMS = Math.min(0.008, Math.max(0.0015, micNoiseFloor * 3));
+}
 async function startTuner() {
   try {
     tunerStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
@@ -653,12 +710,14 @@ async function startTuner() {
     const source = tunerAudioCtx.createMediaStreamSource(tunerStream);
     tunerAnalyser = tunerAudioCtx.createAnalyser();
     tunerAnalyser.fftSize = 4096;
-    source.connect(tunerAnalyser);
+    const boost = tunerAudioCtx.createGain(); boost.gain.value = 4;   // +12 dB digitales: una guitarra clásica llega muy baja y sin control automático de ganancia
+    source.connect(boost); boost.connect(tunerAnalyser);
     tunerActive = true;
     startMicBtn.disabled = true; stopMicBtn.disabled = false;
     document.getElementById('detect-chord-btn').disabled = false;
     document.getElementById('check-prod-btn').disabled = false;
     tunerNote.textContent = '…';
+    await measureNoiseFloor();
     tunerLoop();
   } catch (e) { alert('Micrófono no disponible. Usa HTTPS o localhost.\n' + e.message); }
 }
@@ -791,7 +850,7 @@ const CHROMA_FMIN = 100, CHROMA_PEAK_REL = 0.05;
 function computeChroma(analyser) {
   const n = analyser.frequencyBinCount, db = new Float32Array(n); analyser.getFloatFrequencyData(db);
   const sr = analyser.context.sampleRate, fft = analyser.fftSize, mag = new Float32Array(n);
-  let mx = 0; for (let i = 0; i < n; i++) { mag[i] = db[i] > -100 ? Math.pow(10, db[i] / 20) : 0; if (mag[i] > mx) mx = mag[i]; }
+  let mx = 0; for (let i = 0; i < n; i++) { mag[i] = db[i] > -130 ? Math.pow(10, db[i] / 20) : 0; if (mag[i] > mx) mx = mag[i]; }
   const chroma = new Float32Array(12); if (mx <= 0) return chroma;
   const thr = mx * CHROMA_PEAK_REL;
   for (let i = 2; i < n - 1; i++) {
@@ -1487,7 +1546,7 @@ const CHORD_D = { Mim: 0.9, Lam: 1.0, Mi: 1.0, La: 1.0, Re: 1.1, Rem: 1.2, Do: 1
 const CHANGE_PAIRS = [['Mim', 'Lam'], ['Mi', 'La'], ['La', 'Re'], ['Re', 'Rem'], ['Lam', 'Do'], ['Do', 'Sol'], ['Sol', 'Re'], ['Mim', 'Do']];
 const CLEAN_NEEDED_TODAY = 3, CLEAN_DAYS_TO_LEARN = 2, THEORY_TODAY_NEEDED = 5;
 const CHORD_COVERAGE = 0.5, CHORD_MIN_SHARE = 0.08;     // umbrales de verificación (calibrados con audio sintético)
-let LISTEN_SECONDS = 6, CHANGE_TIMEOUT_SEC = 8; const MIC_MIN_RMS = 0.008, ONSET_RATIO = 1.6, ONSET_SETTLE_MS = 250, ONSET_VALID_MS = 3000;
+let LISTEN_SECONDS = 6, CHANGE_TIMEOUT_SEC = 8; let MIC_MIN_RMS = 0.008; const ONSET_RATIO = 1.6, ONSET_SETTLE_MS = 250, ONSET_VALID_MS = 3000;
 let CHANGES_ROUND_SEC = 60;
 const THEORY_SKILLS = ['notas', 'intervalos', 'triadas_mayores', 'triadas_menores'];
 
@@ -1561,12 +1620,13 @@ let listening = false;
 async function listenForChord() {
   if (listening) return;
   const key = document.getElementById('pr-chord-select').value, fb = document.getElementById('pr-chord-feedback'), btn = document.getElementById('pr-listen-btn');
+  if (!tunerActive) { fb.style.color = '#8899bb'; fb.textContent = 'Midiendo el ruido ambiente… no toques todavía.'; }
   if (!(await ensureMic())) { fb.textContent = 'Micrófono no disponible.'; return; }
-  listening = true; fastSpectrum(true); btn.disabled = true; let streak = 0, ok = false, maxRms = 0, best = 0; const t0 = performance.now(), L = makeChordListener();
+  listening = true; fastSpectrum(true); btn.disabled = true; let streak = 0, ok = false, maxRms = 0, best = 0, heard = null; const t0 = performance.now(), L = makeChordListener();
   const iv = setInterval(() => {
     if (!tunerAnalyser) { finish(); return; }
     const st = L.step(performance.now()); maxRms = Math.max(maxRms, st.rms);
-    const m = chordMatches(st.chroma, key); if (st.valid) best = Math.max(best, m.cov);
+    const m = chordMatches(st.chroma, key); if (st.valid) { best = Math.max(best, m.cov); heard = m.best; }
     streak = (st.valid && m.ok) ? streak + 1 : 0;
     const left = Math.max(0, LISTEN_SECONDS - (performance.now() - t0) / 1000);
     fb.style.color = '#8899bb'; fb.textContent = `Escuchando… ${left.toFixed(0)} s · parecido con ${CHORD_NAME[key]}: ${Math.round(m.cov * 100)} %`;
@@ -1581,7 +1641,7 @@ async function listenForChord() {
       r.n++; fb.style.color = '#4caf50'; fb.textContent = `✅ ${CHORD_NAME[key]} suena limpio (${r.n}/${CLEAN_NEEDED_TODAY} hoy)`;
       if (r.n >= CLEAN_NEEDED_TODAY && !r.clean.includes(d)) { r.clean.push(d); fb.textContent += ' · ¡acorde limpio hoy!'; }
       if (r.n >= CLEAN_NEEDED_TODAY) todayDone().chord = true;
-    } else { fb.style.color = '#f44336'; fb.textContent = `❌ No suena como ${CHORD_NAME[key]} (parecido máximo ${Math.round(best * 100)} %). Revisa que cada cuerda suene sin roces ni cuerdas apagadas.`; }
+    } else { fb.style.color = '#f44336'; fb.textContent = `❌ No suena como ${CHORD_NAME[key]} (parecido máximo ${Math.round(best * 100)} %${heard ? '; la app oyó más bien ' + CHORD_NAME[heard] : ''}). Revisa que cada cuerda suene sin roces ni cuerdas apagadas y que la guitarra esté afinada.`; }
     saveState(); renderPractice(true);
   }
 }
@@ -1634,15 +1694,262 @@ function endRound(completed) {
   renderPractice(true);
 }
 
+// ============================================================
+// RASGUEO CON PATRÓN · ESCALAS · CANCIONES
+// ============================================================
+const STRUM_PATTERNS = {
+  neg: { name: 'Abajo en cada tiempo', arrows: ['↓', '', '↓', '', '↓', '', '↓', ''] },
+  dos: { name: '↓ ↓↑ ↓ ↓↑', arrows: ['↓', '', '↓', '↑', '↓', '', '↓', '↑'] },
+  pop: { name: '↓ ↓↑ ·↑ ↓↑', arrows: ['↓', '', '↓', '↑', '', '↑', '↓', '↑'] },
+  cor: { name: 'Corcheas ↓↑', arrows: ['↓', '↑', '↓', '↑', '↓', '↑', '↓', '↑'] }
+};
+const STRUM_ORDER = ['neg', 'dos', 'pop', 'cor'], STRUM_PASS = 0.75, STRUM_BPM_MIN = 40, STRUM_BPM_MAX = 100, STRUM_BARS = 4, SONG_LOOPS = 2;
+function strumRec(id) { const P = practiceState(); P.strum = P.strum || {}; return P.strum[id] || (P.strum[id] = { bpm: 50, passDays: [], best: 0 }); }
+function strumLearned(id) { return strumRec(id).passDays.length >= 2; }
+function availableStrums() { const out = []; for (let i = 0; i < STRUM_ORDER.length; i++) { out.push(STRUM_ORDER[i]); if (!strumLearned(STRUM_ORDER[i])) break; } return out; }
+
+// Puntuación pura: golpes esperados (ms desde el inicio) frente a ataques detectados. Se compensa un desfase constante (latencia del micrófono, costumbre de ir adelantado o retrasado).
+function scoreStrum(expected, onsets, slotMs) {
+  const win = 0.6 * slotMs, diffs = [];
+  for (const e of expected) { let b = null; for (const o of onsets) { const d = o - e; if (Math.abs(d) <= win && (b === null || Math.abs(d) < Math.abs(b))) b = d; } if (b !== null) diffs.push(b); }
+  let off = 0; if (diffs.length >= 3) { const sd = diffs.slice().sort((a, b) => a - b); off = Math.max(-250, Math.min(250, sd[sd.length >> 1])); }
+  const tol = Math.min(0.25 * slotMs, 100), used = new Set(); let matched = 0, abs = 0;
+  for (const e of expected) { let bi = -1, bd = 1e9; onsets.forEach((o, i) => { if (used.has(i)) return; const d = Math.abs(o - off - e); if (d < bd) { bd = d; bi = i; } }); if (bi >= 0 && bd <= tol) { used.add(bi); matched++; abs += bd; } }
+  const extras = onsets.length - matched;
+  return { score: Math.max(0, (matched - 0.5 * extras) / expected.length), matched, expected: expected.length, extras, offsetMs: Math.round(off), meanAbsMs: matched ? Math.round(abs / matched) : 0 };
+}
+// Detector de ataques por envolvente (RMS de los últimos 512 muestras frente a la media de los 300-60 ms anteriores).
+function makeEnvOnset() {
+  const buf = new Float32Array(tunerAnalyser.fftSize), env = []; let last = -1e9;
+  return (now) => {
+    tunerAnalyser.getFloatTimeDomainData(buf); const n = buf.length; let sum = 0, sd = 0;
+    for (let i = n - 512; i < n; i++) { sum += buf[i] * buf[i]; const d = buf[i] - buf[i - 1]; sd += d * d; }
+    const e = Math.sqrt(sum / 512), h = Math.sqrt(sd / 512);   // h: energía de alta frecuencia (el ataque de la púa), casi no cambia con la resonancia grave de lo que aún suena
+    env.push({ t: now, h }); while (env.length && env[0].t < now - 400) env.shift();
+    const past = env.filter(x => x.t <= now - 60 && x.t >= now - 300), base = past.length ? past.reduce((a2, x) => a2 + x.h, 0) / past.length : h;
+    const on = e >= MIC_MIN_RMS && h > 1.6 * Math.max(base, 0.002) && now - last >= 110; if (on) last = now;
+    return { onset: on, e };
+  };
+}
+let engine = null;
+function stopEngine() { if (engine) { clearInterval(engine.iv); const e = engine; engine = null; if (e.cfg.onStop) e.cfg.onStop(); } }
+// cfg: { bpm, arrows, chords:[por compás], render(info), onEnd(result) , onStop() }
+async function startEngine(cfg) {
+  if (engine) { stopEngine(); return; }
+  const hasMic = await ensureMic();
+  const slotMs = 30000 / cfg.bpm, barMs = 8 * slotMs, tStart = performance.now() + 400, tPlay = tStart + barMs, totalMs = cfg.chords.length * barMs;
+  const expected = []; cfg.chords.forEach((_, b) => cfg.arrows.forEach((a, sl) => { if (a) expected.push(b * barMs + sl * slotMs); }));
+  const det = hasMic ? makeEnvOnset() : null, onsets = []; let maxEnv = 0;
+  engine = { cfg, tPlay, slotMs, expected, onsets };
+  engine.iv = setInterval(() => {
+    const now = performance.now(), rel = now - tPlay;
+    if (det) { const r = det(now); maxEnv = Math.max(maxEnv, r.e); if (r.onset && rel >= -0.6 * slotMs && rel <= totalMs + 0.6 * slotMs) onsets.push(rel); }
+    if (rel < 0) cfg.render({ phase: 'count', beat: now < tStart ? 0 : Math.min(4, Math.floor((now - tStart) / (2 * slotMs)) + 1), chord: cfg.chords[0], next: null, slot: -1, bar: -1 });
+    else { const sl = Math.floor(rel / slotMs), bar = Math.min(cfg.chords.length - 1, Math.floor(sl / 8)); cfg.render({ phase: 'play', bar, slot: sl % 8, chord: cfg.chords[bar], next: cfg.chords[bar + 1] || null }); }
+    if (rel >= totalMs + 0.3 * slotMs) {
+      const e = engine; clearInterval(e.iv); engine = null;
+      cfg.onEnd(!hasMic ? { noMic: true } : maxEnv < MIC_MIN_RMS || onsets.length === 0 ? { silent: true } : scoreStrum(expected, onsets, slotMs));
+    }
+  }, 12);
+}
+function fmtStrum(r) {
+  const off = Math.abs(r.offsetMs) >= 25 ? ` · sueles ir ${r.offsetMs > 0 ? 'retrasado' : 'adelantado'} ${Math.abs(r.offsetMs)} ms` : '';
+  return `${Math.round(r.score * 100)} % · ${r.matched}/${r.expected} golpes en su sitio · ${r.extras} de más${off}`;
+}
+function drawGrid(el, arrows, cur) {
+  if (el.childElementCount !== 8) { el.innerHTML = ''; for (let i = 0; i < 8; i++) el.appendChild(document.createElement('div')); }
+  [...el.children].forEach((c, i) => { c.className = 'pr-cell' + (arrows[i] ? ' hit' : '') + (i === cur ? ' cur' : ''); c.textContent = arrows[i] || '·'; });
+}
+// --- Rasgueo ---
+function strumBpmInput(id) { return Math.min(STRUM_BPM_MAX, Math.max(STRUM_BPM_MIN, +document.getElementById(id).value || 50)); }
+function startStrum() {
+  const id = document.getElementById('pr-strum-select').value, pat = STRUM_PATTERNS[id], fb = document.getElementById('pr-strum-feedback'), btn = document.getElementById('pr-strum-btn'), st = document.getElementById('pr-strum-status'), grid = document.getElementById('pr-strum-grid');
+  if (engine) { stopEngine(); return; }
+  const bpm = strumBpmInput('pr-strum-bpm'); fb.textContent = '';
+  btn.textContent = '⏹ Parar';
+  startEngine({ bpm, arrows: pat.arrows, chords: Array(STRUM_BARS).fill(null),
+    render: i => { st.textContent = i.phase === 'count' ? (i.beat ? 'Entrada: ' + i.beat : '…') : `Compás ${i.bar + 1}/${STRUM_BARS}`; drawGrid(grid, pat.arrows, i.slot); },
+    onStop: () => { btn.textContent = '▶ Empezar (1 compás de entrada + 4)'; st.textContent = '—'; drawGrid(grid, pat.arrows, -1); },
+    onEnd: r => {
+      btn.textContent = '▶ Empezar (1 compás de entrada + 4)'; st.textContent = '—'; drawGrid(grid, pat.arrows, -1);
+      if (r.noMic) { fb.style.color = '#ff9800'; fb.textContent = 'Micrófono no disponible. Usa «Lo toqué bien».'; return; }
+      if (r.silent) { fb.style.color = '#ff9800'; fb.textContent = 'No se oyó nada. Acerca el micrófono y vuelve a intentarlo.'; return; }
+      const rec = strumRec(id), d = todayKey(); rec.best = Math.max(rec.best, r.score);
+      if (r.score >= STRUM_PASS) {
+        if (!rec.passDays.includes(d)) rec.passDays.push(d);
+        const msg = `✅ ${fmtStrum(r)}`; if (rec.bpm <= bpm && bpm < STRUM_BPM_MAX) rec.bpm = Math.min(STRUM_BPM_MAX, bpm + 5);
+        todayDone().strum = true; fb.style.color = '#4caf50'; fb.textContent = msg + (rec.passDays.length >= 2 ? ' · patrón aprendido' : '') + (rec.bpm > bpm ? ` · próximo pulso: ${rec.bpm}` : '');
+      } else { fb.style.color = '#f44336'; fb.textContent = `❌ ${fmtStrum(r)}. Baja el pulso o apaga las cuerdas entre golpes.`; }
+      saveState(); renderPractice(true);
+    } });
+}
+function manualStrum() {
+  const id = document.getElementById('pr-strum-select').value, rec = strumRec(id), d = todayKey(), fb = document.getElementById('pr-strum-feedback');
+  if (!rec.passDays.includes(d)) rec.passDays.push(d); todayDone().strum = true; saveState();
+  fb.style.color = '#4caf50'; fb.textContent = '✋ Anotado a mano.'; renderPractice(true);
+}
+// --- Escalas ---
+const SCALE_ROUTES = [   // [cuerda (6=grave), traste]
+  { id: 'mi-pm', name: 'Mi pentatónica menor (posición abierta)', notes: [[6, 0], [6, 3], [5, 0], [5, 2], [4, 0], [4, 2], [3, 0], [3, 2], [2, 0], [2, 3], [1, 0], [1, 3]] },
+  { id: 'la-pm', name: 'La pentatónica menor (posición 1, traste 5)', notes: [[6, 5], [6, 8], [5, 5], [5, 7], [4, 5], [4, 7], [3, 5], [3, 7], [2, 5], [2, 8], [1, 5], [1, 8]] },
+  { id: 'do-m', name: 'Do mayor (primera posición)', notes: [[5, 3], [4, 0], [4, 2], [4, 3], [3, 0], [3, 2], [2, 0], [2, 1]] },
+  { id: 'sol-m', name: 'Sol mayor (posición abierta)', notes: [[3, 0], [3, 2], [2, 0], [2, 1], [2, 3], [1, 0], [1, 2], [1, 3]] }
+];
+function scaleRec(id) { const P = practiceState(); P.scales = P.scales || {}; return P.scales[id] || (P.scales[id] = { days: [], best: null }); }
+function scaleLearned(id) { return scaleRec(id).days.length >= 2; }
+function availableScales() { const out = []; for (const sc of SCALE_ROUTES) { out.push(sc); if (!scaleLearned(sc.id)) break; } return out; }
+function noteFreq(str, fret) { return OPEN_STRINGS[6 - str].freq * Math.pow(2, fret / 12); }
+function freqName(f) { const m = Math.round(69 + 12 * Math.log2(f / 440)); return CHROMATIC[((m % 12) + 12) % 12]; }
+function centsOff(f, exp) { const c = 1200 * Math.log2(f / exp); return ((c % 1200) + 1800) % 1200 - 600; }   // distancia a la nota esperada ignorando octavas
+function scaleSequence(sc, down) { const up = sc.notes.map(n => n.slice()); return down ? [...up, ...up.slice(0, -1).reverse()] : up; }
+let scaleRun = null;
+async function startScale() {
+  const fb = document.getElementById('pr-scale-feedback'), btn = document.getElementById('pr-scale-btn'), tg = document.getElementById('pr-scale-target');
+  if (scaleRun) { stopScale('Parado.'); return; }
+  const sc = SCALE_ROUTES.find(x => x.id === document.getElementById('pr-scale-select').value), seq = scaleSequence(sc, document.getElementById('pr-scale-down').checked);
+  if (!(await ensureMic())) { fb.style.color = '#ff9800'; fb.textContent = 'Micrófono no disponible. Usa «La toqué entera».'; return; }
+  scaleRun = { sc, seq, i: 0, ok: 0, streak: 0, t0: performance.now(), noteT: performance.now(), maxRms: 0 }; btn.textContent = '⏹ Parar'; fb.textContent = '';
+  const buf = new Float32Array(tunerAnalyser.fftSize);
+  scaleRun.iv = setInterval(() => {
+    const R = scaleRun; if (!R) return; const now = performance.now();
+    if (now - R.t0 > 150000 || now - R.noteT > 15000) { stopScale(now - R.t0 > 150000 ? 'Tiempo agotado.' : 'Te quedaste en una nota. Pulsa de nuevo para intentarlo.'); return; }
+    const [str, fret] = R.seq[R.i], exp = noteFreq(str, fret);
+    tg.textContent = `${freqName(exp)} · cuerda ${str}ª, traste ${fret}`;
+    document.getElementById('pr-scale-seq').textContent = R.seq.map((n, k) => (k === R.i ? '[' : '') + freqName(noteFreq(n[0], n[1])) + (k === R.i ? ']' : '')).join(' ');
+    tunerAnalyser.getFloatTimeDomainData(buf); let s = 0; for (let k = 0; k < buf.length; k++) s += buf[k] * buf[k]; const rms = Math.sqrt(s / buf.length); R.maxRms = Math.max(R.maxRms, rms);
+    if (rms < MIC_MIN_RMS) { R.streak = 0; return; }
+    const y = yinPitch(buf, tunerAnalyser.context.sampleRate);
+    if (y && y.clarity >= 0.7 && Math.abs(centsOff(y.freq, exp)) <= 45) R.streak++; else R.streak = 0;
+    if (R.streak >= 3) { R.i++; R.ok++; R.streak = 0; R.noteT = now; if (R.i >= R.seq.length) finishScale(); }
+  }, 50);
+}
+function stopScale(msg) { const R = scaleRun; if (!R) return; clearInterval(R.iv); scaleRun = null; document.getElementById('pr-scale-btn').textContent = '🎧 Empezar'; document.getElementById('pr-scale-target').textContent = '—';
+  const fb = document.getElementById('pr-scale-feedback'); fb.style.color = '#ff9800'; fb.textContent = (R.maxRms < MIC_MIN_RMS ? 'No se oyó nada. Acerca el micrófono.' : `${msg} Llevabas ${R.ok}/${R.seq.length} notas.`); }
+function finishScale() {
+  const R = scaleRun; clearInterval(R.iv); scaleRun = null; const secs = Math.round((performance.now() - R.t0) / 1000), rec = scaleRec(R.sc.id), d = todayKey();
+  if (!rec.days.includes(d)) rec.days.push(d); rec.best = rec.best == null ? secs : Math.min(rec.best, secs); todayDone().scale = true; saveState();
+  document.getElementById('pr-scale-btn').textContent = '🎧 Empezar'; document.getElementById('pr-scale-target').textContent = '—';
+  const fb = document.getElementById('pr-scale-feedback'); fb.style.color = '#4caf50'; fb.textContent = `✅ Escala completa en ${secs} s (mejor ${rec.best} s)` + (rec.days.length >= 2 ? ' · aprendida' : ''); renderPractice(true);
+}
+function manualScale() { const id = document.getElementById('pr-scale-select').value, rec = scaleRec(id), d = todayKey(); if (!rec.days.includes(d)) rec.days.push(d); todayDone().scale = true; saveState();
+  const fb = document.getElementById('pr-scale-feedback'); fb.style.color = '#4caf50'; fb.textContent = '✋ Anotada a mano.'; renderPractice(true); }
+// --- Canciones ---
+const SONGS = [
+  { id: 'vaiven', name: 'Vaivén Mim–Lam', bars: ['Mim', 'Mim', 'Lam', 'Lam'] },
+  { id: 'sol-4', name: 'I–V–vi–IV en Sol', bars: ['Sol', 'Re', 'Mim', 'Do'] },
+  { id: 'sol-145', name: 'I–IV–V–I en Sol', bars: ['Sol', 'Do', 'Re', 'Sol'] },
+  { id: 'mim-do', name: 'vi–IV–I–V en Sol', bars: ['Mim', 'Do', 'Sol', 'Re'] },
+  { id: 'la-145', name: 'Tres acordes en La', bars: ['La', 'La', 'Re', 'La', 'Mi', 'Re', 'La', 'La'] }
+];
+function parseSong(txt) { const toks = (txt || '').trim().split(/[\s,–-]+/).filter(Boolean).map(t => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()), bad = toks.filter(t => !CHORD_NAME[t]);
+  return { bars: toks, bad, ok: toks.length >= 2 && toks.length <= 32 && !bad.length }; }
+function songRec(id) { const P = practiceState(); P.songs = P.songs || {}; return P.songs[id] || (P.songs[id] = { days: [], runs: 0 }); }
+function availableSongs() { const av = new Set(availableChords()); return SONGS.filter(x => x.bars.every(c => av.has(c))); }
+function currentSong() {
+  const v = document.getElementById('pr-song-select').value;
+  if (v === 'custom') { const p = parseSong(document.getElementById('pr-song-custom').value); return p.ok ? { id: 'custom', name: 'Tu canción', bars: p.bars } : { error: p.bad.length ? 'Acorde desconocido: ' + p.bad.join(', ') : 'Escribe entre 2 y 32 acordes.' }; }
+  return SONGS.find(x => x.id === v);
+}
+function startSong() {
+  if (engine) { stopEngine(); return; }
+  const fb = document.getElementById('pr-song-feedback'), btn = document.getElementById('pr-song-btn'), song = currentSong();
+  if (!song || song.error) { fb.style.color = '#ff9800'; fb.textContent = song ? song.error : 'Elige una canción.'; return; }
+  const pid = document.getElementById('pr-song-pattern').value, pat = STRUM_PATTERNS[pid], bpm = strumBpmInput('pr-song-bpm'), chords = [];
+  for (let l = 0; l < SONG_LOOPS; l++) chords.push(...song.bars);
+  const big = document.getElementById('pr-song-chord'), dia = document.getElementById('pr-song-diagram'), grid = document.getElementById('pr-song-grid'); let shown = null; fb.textContent = ''; btn.textContent = '⏹ Parar';
+  const reset = () => { btn.textContent = '▶ Empezar (2 vueltas)'; big.textContent = '—'; dia.innerHTML = ''; drawGrid(grid, pat.arrows, -1); shown = null; };
+  startEngine({ bpm, arrows: pat.arrows, chords,
+    render: i => {
+      const c = i.chord; if (c && c !== shown) { dia.innerHTML = chordSVG(c); shown = c; }
+      big.textContent = i.phase === 'count' ? `Entrada ${i.beat || ''} · primero: ${CHORD_NAME[c]}` : `${CHORD_NAME[c]}` + (i.next ? ` → ${CHORD_NAME[i.next]}` : '') + ` · compás ${i.bar + 1}/${chords.length}`;
+      drawGrid(grid, pat.arrows, i.slot);
+    }, onStop: reset,
+    onEnd: r => {
+      reset(); const rec = songRec(song.id), d = todayKey();
+      const credit = () => { rec.runs++; if (!rec.days.includes(d)) rec.days.push(d); todayDone().song = true; saveState(); renderPractice(true); };
+      if (r.noMic || r.silent) { fb.style.color = '#ff9800'; fb.textContent = (r.noMic ? 'Micrófono no disponible.' : 'No se oyó nada.') + ' Si la tocaste, pulsa «La toqué completa».'; return; }
+      if (r.score >= 0.5) { credit(); fb.style.color = '#4caf50'; fb.textContent = `✅ Canción completa · ritmo ${fmtStrum(r)}`; }
+      else { fb.style.color = '#ff9800'; fb.textContent = `Ritmo ${fmtStrum(r)}. Si la tocaste entera, pulsa «La toqué completa»; si no, prueba con menos pulso.`; }
+    } });
+}
+function manualSong() { const song = currentSong(), fb = document.getElementById('pr-song-feedback'); if (!song || song.error) { fb.style.color = '#ff9800'; fb.textContent = song ? song.error : 'Elige una canción.'; return; }
+  const rec = songRec(song.id), d = todayKey(); rec.runs++; if (!rec.days.includes(d)) rec.days.push(d); todayDone().song = true; saveState(); fb.style.color = '#4caf50'; fb.textContent = '✋ Anotada a mano.'; renderPractice(true); }
+function fillSelect(el, items, labelFn, keep) { const cur = el.value; el.innerHTML = ''; items.forEach(x => { const o = document.createElement('option'); o.value = x.v; o.textContent = x.t; el.appendChild(o); }); if (items.some(x => x.v === cur)) el.value = cur; }
+function renderExtras() {
+  const av = availableStrums(), ss = document.getElementById('pr-strum-select');
+  fillSelect(ss, av.map(id => ({ v: id, t: STRUM_PATTERNS[id].name + (strumLearned(id) ? ' ✔' : '') })));
+  if (!engine) { const rec = strumRec(ss.value); if (!document.getElementById('pr-strum-bpm').dataset.touched) document.getElementById('pr-strum-bpm').value = rec.bpm; drawGrid(document.getElementById('pr-strum-grid'), STRUM_PATTERNS[ss.value].arrows, -1); }
+  fillSelect(document.getElementById('pr-strum-chord'), [{ v: '', t: 'cuerdas apagadas' }, ...availableChords().map(k => ({ v: k, t: CHORD_NAME[k] }))]);
+  const sc = document.getElementById('pr-scale-select'); fillSelect(sc, availableScales().map(x => ({ v: x.id, t: x.name + (scaleLearned(x.id) ? ' ✔' : '') })));
+  const cs = SCALE_ROUTES.find(x => x.id === sc.value); document.getElementById('pr-scale-seq').textContent = scaleRun ? document.getElementById('pr-scale-seq').textContent : cs.notes.map(n => freqName(noteFreq(n[0], n[1]))).join(' ');
+  const so = document.getElementById('pr-song-select'); fillSelect(so, [...availableSongs().map(x => ({ v: x.id, t: x.name + ((songRec(x.id).days.length) ? ' ✔' : '') })), { v: 'custom', t: 'Escribir la mía…' }]);
+  document.getElementById('pr-song-custom').style.display = so.value === 'custom' ? '' : 'none';
+  fillSelect(document.getElementById('pr-song-pattern'), av.map(id => ({ v: id, t: STRUM_PATTERNS[id].name })));
+  if (!engine) drawGrid(document.getElementById('pr-song-grid'), STRUM_PATTERNS[document.getElementById('pr-song-pattern').value].arrows, -1);
+}
+
+// ============================================================
+// DIAGNÓSTICO DEL MICRÓFONO
+// ============================================================
+let diag = null;
+function chordScores() {
+  const ch = computeChroma(tunerAnalyser); const sc = Object.entries(CHORD_TEMPLATES).map(([k, t]) => [k, cosineSimilarity(ch, t)]).sort((a, b) => b[1] - a[1]);
+  return { chroma: ch, top: sc.slice(0, 3) };
+}
+function diagSnapshot() {
+  const buf = new Float32Array(tunerAnalyser.fftSize); tunerAnalyser.getFloatTimeDomainData(buf);
+  let s2 = 0, pk = 0; for (let i = 0; i < buf.length; i++) { s2 += buf[i] * buf[i]; pk = Math.max(pk, Math.abs(buf[i])); }
+  const rms = Math.sqrt(s2 / buf.length), y = rms >= MIC_MIN_RMS ? yinPitch(buf, tunerAnalyser.context.sampleRate) : null, cs = chordScores();
+  return { rms, peak: pk, db: rms > 0 ? 20 * Math.log10(rms) : -120, note: y && y.clarity >= 0.6 ? freqName(y.freq) + ' (' + y.freq.toFixed(1) + ' Hz)' : '—', top: cs.top, chroma: cs.chroma };
+}
+function diagText(d) {
+  const best = d.top[0], cov = d.chroma ? CHORD_TEMPLATES[best[0]].reduce((a, v, i) => a + (v ? d.chroma[i] : 0), 0) : 0;
+  return `nivel ${(d.rms * 1000).toFixed(1)} (pico ${d.peak.toFixed(2)}) · ${d.db.toFixed(0)} dBFS\n` +
+    `ruido ambiente ${((micNoiseFloor || 0) * 1000).toFixed(1)} · umbral ${(MIC_MIN_RMS * 1000).toFixed(1)} · ${d.rms >= MIC_MIN_RMS ? 'SE OYE' : 'por debajo del umbral'}\n` +
+    `nota: ${d.note}\nacorde: ` + d.top.map(([k, v]) => `${CHORD_NAME[k]} ${Math.round(v * 100)}%`).join(' · ') + ` (cobertura ${Math.round(cov * 100)}%)`;
+}
+async function toggleDiag() {
+  const panel = document.getElementById('diag-panel');
+  if (diag) { clearInterval(diag.iv); diag = null; panel.style.display = 'none'; return; }
+  if (!(await ensureMic())) return;
+  panel.style.display = ''; diag = { iv: setInterval(() => {
+    if (!tunerAnalyser) return; const d = diagSnapshot();
+    document.getElementById('diag-bar').style.width = Math.min(100, Math.max(0, (d.db + 70) / 70 * 100)) + '%';
+    document.getElementById('diag-bar').style.background = d.rms >= MIC_MIN_RMS ? '#4caf50' : '#ff9800';
+    document.getElementById('diag-text').textContent = diagText(d);
+  }, 120) };
+}
+function encodeWav(chunks, sr) {
+  let n = 0; chunks.forEach(c => n += c.length); const buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf), w = (o, t) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+  w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVEfmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
+  let o = 44; for (const c of chunks) for (let i = 0; i < c.length; i++) { const x = Math.max(-1, Math.min(1, c[i])); v.setInt16(o, x < 0 ? x * 0x8000 : x * 0x7fff, true); o += 2; }
+  return new Blob([buf], { type: 'audio/wav' });
+}
+async function recordDiag() {
+  const btn = document.getElementById('diag-rec-btn'), box = document.getElementById('diag-summary');
+  if (!(await ensureMic())) return; if (btn.disabled) return; btn.disabled = true;
+  const ctx = tunerAudioCtx, src = ctx.createMediaStreamSource(tunerStream), proc = ctx.createScriptProcessor(4096, 1, 1), zero = ctx.createGain(); zero.gain.value = 0;
+  const chunks = [], snaps = []; proc.onaudioprocess = e => chunks.push(new Float32Array(e.inputBuffer.getChannelData(0))); src.connect(proc); proc.connect(zero); zero.connect(ctx.destination);
+  const t0 = performance.now(), iv = setInterval(() => { const l = 6 - (performance.now() - t0) / 1000; btn.textContent = '⏺ Toca… ' + Math.max(0, l).toFixed(0) + ' s'; if (tunerAnalyser) snaps.push(diagSnapshot()); }, 250);
+  await new Promise(r => setTimeout(r, 6000)); clearInterval(iv); proc.disconnect(); src.disconnect(); zero.disconnect(); proc.onaudioprocess = null;
+  const wav = encodeWav(chunks, ctx.sampleRate), a = document.createElement('a'), stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '');
+  a.href = URL.createObjectURL(wav); a.download = 'guitarra-mic-' + stamp + '.wav'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  const loud = snaps.filter(x => x.rms >= MIC_MIN_RMS), mx = snaps.reduce((m, x) => Math.max(m, x.rms), 0), votes = {}; loud.forEach(x => { votes[x.top[0][0]] = (votes[x.top[0][0]] || 0) + 1; });
+  box.style.display = ''; box.value = `Diagnóstico ${new Date().toLocaleString('es-ES')}\nnavegador: ${navigator.userAgent}\nfrecuencia de muestreo: ${ctx.sampleRate} Hz\nruido ambiente: ${((micNoiseFloor || 0) * 1000).toFixed(2)} · umbral: ${(MIC_MIN_RMS * 1000).toFixed(2)} · nivel máximo: ${(mx * 1000).toFixed(2)}\n` +
+    `lecturas por encima del umbral: ${loud.length}/${snaps.length}\nacorde más votado: ` + (Object.entries(votes).sort((x, y) => y[1] - x[1]).map(([k, n]) => CHORD_NAME[k] + ' ×' + n).join(', ') || '—');
+  btn.textContent = '⏺ Grabar 6 s y guardar WAV'; btn.disabled = false;
+}
+
 // --- Pintado ---
 function renderPractice(keepFeedback) {
   const P = practiceState(), d = todayKey(), done = P.done[d] || {};
   const th = theoryToday(), thDone = th >= THEORY_TODAY_NEEDED;
-  const stepsDone = [!!done.warm, !!done.chord, !!done.changes, thDone];
+  const stepsDone = [!!done.warm, !!done.chord, !!done.changes, !!done.strum, thDone];
   const count = stepsDone.filter(Boolean).length, days = Object.values(P.done).filter(x => x && Object.values(x).some(Boolean)).length;
-  document.getElementById('practice-summary').textContent = `Hoy: ${count}/4 pasos · Días con práctica: ${days}`;
+  document.getElementById('practice-summary').textContent = `Hoy: ${count}/5 pasos` + (done.scale ? ' · escala ✅' : '') + (done.song ? ' · canción ✅' : '') + ` · Días con práctica: ${days}`;
   const mark = (id, ok) => { const el = document.getElementById(id); el.classList.toggle('pr-done', ok); el.querySelector('.pr-title .pr-ok').textContent = ok ? ' ✅' : ''; };
-  mark('pr-step-warm', stepsDone[0]); mark('pr-step-chord', stepsDone[1]); mark('pr-step-changes', stepsDone[2]); mark('pr-step-theory', stepsDone[3]);
+  mark('pr-step-warm', stepsDone[0]); mark('pr-step-chord', stepsDone[1]); mark('pr-step-changes', stepsDone[2]); mark('pr-step-strum', stepsDone[3]); mark('pr-step-scale', !!done.scale); mark('pr-step-song', !!done.song); mark('pr-step-theory', stepsDone[4]);
+  renderExtras();
   // acorde
   const av = availableChords(), sel = document.getElementById('pr-chord-select'), cur = sel.value || chordOfTheDay();
   sel.innerHTML = ''; av.forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = CHORD_NAME[k] + (isLearned(k) ? ' ✔' : ''); sel.appendChild(o); });
@@ -1686,6 +1993,19 @@ function manualChanges() {
   renderPractice(true);
 }
 function initPractice() {
+  document.getElementById('diag-btn').addEventListener('click', toggleDiag);
+  document.getElementById('diag-rec-btn').addEventListener('click', recordDiag);
+  document.getElementById('pr-strum-btn').addEventListener('click', startStrum);
+  document.getElementById('pr-strum-manual').addEventListener('click', manualStrum);
+  document.getElementById('pr-strum-select').addEventListener('change', () => { document.getElementById('pr-strum-bpm').dataset.touched = ''; renderPractice(true); });
+  document.getElementById('pr-strum-bpm').addEventListener('input', e => { e.target.dataset.touched = '1'; });
+  document.getElementById('pr-scale-btn').addEventListener('click', startScale);
+  document.getElementById('pr-scale-manual').addEventListener('click', manualScale);
+  document.getElementById('pr-scale-select').addEventListener('change', () => renderPractice(true));
+  document.getElementById('pr-song-btn').addEventListener('click', startSong);
+  document.getElementById('pr-song-manual').addEventListener('click', manualSong);
+  document.getElementById('pr-song-select').addEventListener('change', () => renderPractice(true));
+  document.getElementById('pr-song-pattern').addEventListener('change', () => renderPractice(true));
   document.getElementById('pr-manual-chord-btn').addEventListener('click', manualChord);
   document.getElementById('pr-manual-changes-btn').addEventListener('click', manualChanges);
   document.getElementById('pr-warm-btn').addEventListener('click', () => { todayDone().warm = true; saveState(); renderPractice(true); });
